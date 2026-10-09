@@ -45,6 +45,8 @@ function norm(a){
   if(!Array.isArray(a.friends))a.friends=[];
   if(!Array.isArray(a.tags))a.tags=[];
   a.creator=a.creator===true;
+  ['streak','bestStreak','donated','received'].forEach(k=>a[k]=+a[k]||0);
+  if(typeof a.lastDay!=='string')a.lastDay='';
   if(!a.seen)a.seen=Date.now();
   if(!a.created)a.created=a.seen;
   return a;
@@ -78,7 +80,7 @@ function uniqueName(base){
 }
 const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const newAcc=(id,type,name)=>({id,type,name,email:null,av:{t:'emoji',v:pick(EMOJI)},bg:{t:'grad',v:0},accent:'#a855f7',fx:'neon',nc:'#ffffff',
-  coins:1000,games:0,won:0,best:0,bonusAt:0,friends:[],tags:[],creator:false,seen:Date.now(),on:false,created:Date.now()});
+  coins:1000,games:0,won:0,best:0,bonusAt:0,streak:0,bestStreak:0,lastDay:'',donated:0,received:0,friends:[],tags:[],creator:false,seen:Date.now(),on:false,created:Date.now()});
 
 /* ---------- Пароли (PBKDF2 + соль, в открытом виде не хранятся) ---------- */
 const hex=u=>[...new Uint8Array(u)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -269,6 +271,9 @@ const TAGS=[
   {id:'e3',g:'earn',ic:'💰',n:'Богач',c:'#fbbf24',need:a=>a.coins>=10000,hint:'Накопи 10 000 монет'},
   {id:'e4',g:'earn',ic:'🏦',n:'Золотой запас',c:'#fde68a',need:a=>a.coins>=50000,hint:'Накопи 50 000 монет'},
   {id:'e5',g:'earn',ic:'🤝',n:'Душа компании',c:'#f472b6',need:a=>a.friends.length>=3,hint:'Заведи 3 друзей'},
+  {id:'e6',g:'earn',ic:'💜',n:'Меценат',c:'#f472b6',need:a=>a.donated>=1000,hint:'Отправь автору 1 000 монет'},
+  {id:'e7',g:'earn',ic:'📅',n:'Неделя подряд',c:'#38bdf8',need:a=>a.bestStreak>=7,hint:'Заходи 7 дней подряд'},
+  {id:'e8',g:'earn',ic:'🗓',n:'Месяц подряд',c:'#a78bfa',need:a=>a.bestStreak>=30,hint:'Заходи 30 дней подряд'},
   {id:'c1',g:'creator',ic:'👑',n:'Создатель',c:'#fbbf24'},{id:'c2',g:'creator',ic:'🛠',n:'Архитектор',c:'#22d3ee'},
   {id:'c3',g:'creator',ic:'⚡',n:'Хозяин хранилища',c:'#c084fc'},{id:'c4',g:'creator',ic:'🌟',n:'Основатель',c:'#fde68a'}
 ];
@@ -358,7 +363,7 @@ function render(){
   $$('#emo button').forEach(b=>b.classList.toggle('on',me.av.t==='emoji'&&b.textContent===me.av.v));
   $$('#sws .sw').forEach((b,i)=>b.classList.toggle('on',me.bg.t==='grad'&&me.bg.v===i));
   const bt=$('#bigTags');bt.replaceChildren(...shownTags(me).map(tagEl));
-  updBal(true);stats();renderSec();renderTags();renderDonate();
+  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();
 }
 function stats(){$('#stC').textContent=me.coins.toLocaleString('ru');$('#stG').textContent=me.games;$('#stW').textContent=me.won.toLocaleString('ru');$('#stB').textContent=me.best.toLocaleString('ru')}
 function updBal(quiet){$('#balN').textContent=me.coins.toLocaleString('ru');if(!quiet){const b=$('#bal');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}stats()}
@@ -389,7 +394,6 @@ function readImg(file,max,cb,square){
 }
 $('#avFile').onchange=e=>{const f=e.target.files[0];if(f)readImg(f,160,d=>{me.av={t:'img',v:d};save();render()},true)};
 $('#bgFile').onchange=e=>{const f=e.target.files[0];if(f)readImg(f,1000,d=>{me.bg={t:'img',v:d};save();render()})};
-$('#resetBal').onclick=()=>{me.coins=1000;save();updBal();toast('Баланс сброшен: 1000 монет')};
 $('#mini').onclick=e=>go('profile',e);
 
 /* безопасность: пароль для гостя / смена пароля */
@@ -535,6 +539,7 @@ function renderTop(){
 
 /* ---------- Пожертвования ---------- */
 function renderDonate(){
+  renderCoinDonate();
   const g=$('#dnGrid'),h=$('#dnHint'),gl=$('#dnGoal');g.innerHTML='';h.textContent='';gl.innerHTML='';
   const links=(DONATE.links||[]).filter(l=>l&&l.label&&/^https:\/\//i.test(l.url));
   const reqs=(DONATE.requisites||[]).filter(r=>r&&r.label&&r.value);
@@ -556,6 +561,50 @@ function renderDonate(){
   }
 }
 
+/* пожертвования монетами: перевод на аккаунт создателя (самого раннего из созданных) */
+const COIN_AMTS=[100,200,300,500,1000,5000],RUB_AMTS=[100,200,300,500,1000];
+let dnMode='coin',dnCoin=100,dnRub=300;
+function amtButtons(box,list,cur,unit,set){
+  box.innerHTML='';
+  list.forEach(v=>{const b=document.createElement('button');b.type='button';b.className=v===cur?'on':'';b.textContent=v.toLocaleString('ru')+' '+unit;b.onclick=()=>set(v);box.appendChild(b)});
+}
+const findCreator=()=>Object.values(sync()).filter(a=>a.creator&&(!me||a.id!==me.id)).sort((a,b)=>a.created-b.created)[0];
+function renderCoinDonate(){
+  if(!me)return;
+  $$('#dnTabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===dnMode));
+  $('#dnCoin').hidden=dnMode!=='coin';$('#dnRub').hidden=dnMode!=='rub';
+  const custom=$('#dnCustom').value!=='';
+  amtButtons($('#dnCoinAmts'),COIN_AMTS,custom?0:dnCoin,'🪙',v=>{dnCoin=v;$('#dnCustom').value='';renderCoinDonate()});
+  amtButtons($('#dnRubAmts'),RUB_AMTS,dnRub,'₽',v=>{dnRub=v;renderCoinDonate()});
+  $('#dnPay').textContent='₽ Поддержать на '+dnRub.toLocaleString('ru')+' ₽';
+  const info=$('#dnCoinInfo'),btn=$('#dnSend'),c=findCreator();
+  if(me.creator){info.textContent=`Ты создатель сайта — монеты от игроков приходят тебе. Получено всего: ${me.received.toLocaleString('ru')} 🪙`;btn.disabled=true}
+  else{
+    btn.disabled=!c;
+    info.textContent=c?`Получатель: ${c.name} · у тебя ${me.coins.toLocaleString('ru')} 🪙`+(me.donated?` · уже отправлено: ${me.donated.toLocaleString('ru')} 🪙`:''):'Создатель пока не зарегистрирован в системе — отправлять монеты некому.';
+  }
+}
+$$('#dnTabs button').forEach(b=>b.onclick=()=>{dnMode=b.dataset.m;renderCoinDonate()});
+$('#dnCustom').oninput=()=>renderCoinDonate();
+$('#dnSend').onclick=()=>{
+  if(!me||me.creator)return;
+  const raw=$('#dnCustom').value,n=Math.floor(+(raw!==''?raw:dnCoin));
+  if(!(n>=1))return toast('Введи сумму от 1 монеты');
+  if(n>me.coins)return toast('Не хватает монет');
+  const to=tx(acc=>{
+    const c=Object.values(acc).filter(a=>a.creator&&a.id!==me.id).sort((a,b)=>a.created-b.created)[0];
+    if(!c)return null;
+    me.coins-=n;me.donated+=n;c.coins+=n;c.received=(c.received||0)+n;return c;
+  });
+  if(!to)return toast('Создатель не найден');
+  $('#dnCustom').value='';rain();updBal();render();toast(`💜 Спасибо! ${to.name} получил ${n.toLocaleString('ru')} монет`);
+};
+$('#dnPay').onclick=()=>{
+  const l=(DONATE.links||[]).find(l=>l&&/^https:\/\//i.test(l.url));
+  if(!l)return toast('Приём рублей скоро подключим 💜');
+  window.open(l.url,'_blank','noopener,noreferrer');
+};
+
 /* ---------- Диалог ---------- */
 function ask(t,p,ok='Да',no='Отмена'){
   return new Promise(res=>{
@@ -566,15 +615,47 @@ function ask(t,p,ok='Да',no='Отмена'){
   });
 }
 
-/* ---------- Бонус ---------- */
+/* ---------- Ежедневный вход ----------
+   День N серии = N×100 монет, максимум на 100-й день (10 000). Пропущенный календарный день обнуляет серию. */
+const STREAK_MAX=100,STREAK_STEP=100,reward=n=>Math.min(n,STREAK_MAX)*STREAK_STEP;
+const dayKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>dayKey(new Date());
+const yestKey=()=>{const d=new Date();d.setDate(d.getDate()-1);return dayKey(d)};
+function streakState(){
+  const t=todayKey(),claimed=me.lastDay===t,alive=claimed||me.lastDay===yestKey();
+  const cur=alive?me.streak:0;
+  return {claimed,cur,day:claimed?cur:cur+1};     /* day — номер дня, который сегодня забирается / уже забран */
+}
+let stKey='';
+function renderStreak(){
+  if(!me)return;
+  const s=streakState(),page=Math.floor((s.day-1)/10)*10,g=$('#stGrid');g.innerHTML='';stKey=todayKey()+'|'+me.streak+'|'+me.lastDay;
+  $('#stSum').textContent=s.cur?`Серия: ${s.cur} дн. · рекорд: ${me.bestStreak}`:`Серия начнётся с первого входа · рекорд: ${me.bestStreak}`;
+  for(let i=1;i<=10;i++){
+    const d=page+i,c=document.createElement('div');
+    c.className='st-day'+(d<=s.cur?' done':'')+(d===s.day?' today':'')+(d>s.day||(d===s.day&&!s.claimed&&d>s.cur)?' fut':'');
+    if(d===s.day&&!s.claimed)c.classList.add('now');
+    const a=document.createElement('small'),b=document.createElement('b'),m=document.createElement('span');
+    a.textContent='День '+d;b.textContent='+'+reward(d).toLocaleString('ru');m.textContent=d<=s.cur?'✓':(d===s.day?'🎁':'🪙');
+    c.append(a,m,b);g.appendChild(c);
+  }
+}
 function bonusTick(){
   if(!me)return;
-  const left=864e5-(Date.now()-me.bonusAt),b=$('#bonusBtn');
-  if(left<=0){b.textContent='🎁 Забрать +500 монет';b.disabled=false}
-  else{const h=Math.floor(left/36e5),m=Math.floor(left%36e5/6e4),s=Math.floor(left%6e4/1e3);b.textContent=`⏳ Следующий бонус через ${h}ч ${m}м ${s}с`;b.disabled=true}
+  if(stKey!==todayKey()+'|'+me.streak+'|'+me.lastDay)renderStreak();
+  const s=streakState(),b=$('#bonusBtn');
+  if(!s.claimed){b.textContent=`🎁 День ${s.day}: забрать +${reward(s.day).toLocaleString('ru')} монет`;b.disabled=false;return}
+  const nx=new Date();nx.setHours(24,0,0,0);const left=nx-Date.now();
+  const h=Math.floor(left/36e5),m=Math.floor(left%36e5/6e4),sec=Math.floor(left%6e4/1e3);
+  b.textContent=`⏳ День ${s.day+1}: +${reward(s.day+1).toLocaleString('ru')} · через ${h}ч ${m}м ${sec}с`;b.disabled=true;
 }
 setInterval(bonusTick,1000);
-$('#bonusBtn').onclick=()=>{me.bonusAt=Date.now();addCoins(500);rain();toast('🎁 +500 монет!');bonusTick()};
+$('#bonusBtn').onclick=()=>{
+  if(!me)return;sync();const s=streakState();if(s.claimed)return bonusTick();
+  me.streak=s.day;me.lastDay=todayKey();me.bestStreak=Math.max(me.bestStreak,me.streak);
+  const r=reward(s.day);addCoins(r);rain();render();bonusTick();
+  toast(`🎁 День ${s.day}: +${r.toLocaleString('ru')} монет!`);
+};
 
 /* ---------- Анимированный переход ----------
    Круг-«шторка» раскрывается от места клика, под ним крутится кольцо из монет,

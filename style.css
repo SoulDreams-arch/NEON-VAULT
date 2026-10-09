@@ -292,7 +292,23 @@ select.inp{margin-bottom:0}select option{background:#14102b}
 .dn-bar{height:10px;border-radius:99px;background:#0004;border:1px solid var(--line);overflow:hidden}
 .dn-bar b{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#f472b6,var(--gold));box-shadow:0 0 14px #f472b6;transition:width .8s}
 
-@media(prefers-reduced-motion:reduce){.tg.crt,.tpb.crt.on{animation:none!important}.wp-grid,.wp-glow,.wp-ring,.wp-ci,.wp-cf,.wp-sparks i,.wp-sweep,.view.pop>*{animation:none!important}}
+/* серия входов */
+.streak{padding:22px;margin-bottom:22px}
+.st-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.st-head h3{font-size:16px}.st-sum{font-size:13px;color:#a5a3c4}
+.st-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:10px}
+.st-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;border-radius:16px;background:#0003;border:1px solid var(--line);text-align:center;transition:.2s}
+.st-day small{font-size:11px;color:#a5a3c4}.st-day span{font-size:20px;line-height:1.2}.st-day b{font:800 13px Orbitron;color:var(--gold)}
+.st-day.fut{opacity:.55}
+.st-day.done{background:linear-gradient(160deg,#22c55e33,#0003);border-color:#22c55e88}.st-day.done b{color:#86efac}
+.st-day.today{border-color:var(--gold);box-shadow:0 0 18px -4px var(--gold);opacity:1}
+.st-day.now{background:linear-gradient(160deg,#fbbf2433,#0003);animation:balp 1.6s ease-in-out infinite}
+.st-note{margin-top:14px;font-size:12px;color:#8e8cae;line-height:1.5}
+.dn-pane{margin-top:16px}.dn-pane[hidden]{display:none}
+.donate .seg{margin-bottom:0}.dn-amts button{padding:8px 14px}
+.dn-pane #dnGoal:not(:empty){margin:16px 0 0}.dn-pane .dn-grid{margin-top:16px}.dn-pane .dn-hint{margin-top:12px}
+
+@media(prefers-reduced-motion:reduce){.st-day.now{animation:none!important}.tg.crt,.tpb.crt.on{animation:none!important}.wp-grid,.wp-glow,.wp-ring,.wp-ci,.wp-cf,.wp-sparks i,.wp-sweep,.view.pop>*{animation:none!important}}
 @media(max-height:640px){.nbtn{padding:8px 4px}.nbtn em{font-size:20px}#nav{gap:6px}}
 
 @media(max-width:700px){
