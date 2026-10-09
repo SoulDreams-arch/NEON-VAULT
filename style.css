@@ -714,3 +714,25 @@ body.compact-ui .card{padding:clamp(10px,1.2vw,18px)}body.compact-ui .view{paddi
 @media(max-width:760px){#v-slots .slots-layout{grid-template-columns:1fr!important}#v-slots .slots-matrix{min-height:0;grid-template-rows:repeat(6,minmax(30px,1fr));gap:3px!important;padding:7px!important}#v-slots .slot-cell{font-size:clamp(14px,4vw,26px)!important}#v-progress .constellation-panel{min-height:0}}
 @media(prefers-reduced-motion:reduce){#v-progress:before{animation:none}#v-slots .slot-cell{animation:none!important}#wipe .vault-tile{animation:none!important;opacity:1;transform:none}}
 #v-progress .constellation-subpanel{margin-top:14px;background:linear-gradient(145deg,#0a0a12eF,#060609ed)!important;border-color:#ffffff1c!important;position:relative}
+
+
+/* NEON VAULT 2.0 — refined admin, Premium and donation panels */
+.admin-head{position:relative;overflow:hidden;background:radial-gradient(ellipse at 88% 0%,rgba(168,85,247,.19),transparent 42%),linear-gradient(135deg,rgba(18,18,34,.96),rgba(12,15,30,.94));border:1px solid rgba(192,132,252,.25);box-shadow:0 18px 55px rgba(0,0,0,.25)}
+.admin-head-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.admin-head-chips span{font-size:12px;padding:7px 11px;border:1px solid rgba(196,181,253,.18);border-radius:999px;background:rgba(139,92,246,.10);color:#ded6ff}
+.admin-dashboard-grid>.card{border:1px solid rgba(168,145,255,.16);background:linear-gradient(145deg,rgba(25,25,43,.92),rgba(13,16,30,.94));border-radius:18px;box-shadow:0 12px 35px rgba(0,0,0,.18);transition:border-color .2s,transform .2s}
+.admin-dashboard-grid>.card:hover{border-color:rgba(196,181,253,.34);transform:translateY(-2px)}
+.admin-field-label{display:block;font-size:12px;color:#c4b5fd;margin:12px 0 6px;font-weight:700}
+.admin-dashboard-grid .inp{border-radius:12px}
+.premium-payment-card{margin:18px 0;border:1px solid rgba(248,113,113,.25);background:radial-gradient(ellipse at 90% 0%,rgba(168,85,247,.13),transparent 45%),linear-gradient(135deg,rgba(22,19,35,.97),rgba(13,15,28,.98))}
+.premium-payment-copy{max-width:850px}
+.premium-payment-copy h2{margin:6px 0 10px}
+.premium-payment-warning{color:#ff777e!important;background:rgba(127,29,29,.15);border:1px solid rgba(248,113,113,.28);border-left:3px solid #ef4444;padding:12px 14px;border-radius:10px;font-weight:650;line-height:1.55}
+.dn-payment-note{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
+.dn-payment-note p{margin:0;color:var(--muted,#aaa);flex:1;min-width:200px}
+.dn-payment-note .btn,.premium-payment-card .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+#achievementTree{min-height:620px;background:radial-gradient(ellipse at 50% 90%,rgba(109,40,217,.17),transparent 48%),radial-gradient(ellipse at 50% 40%,rgba(8,145,178,.08),transparent 65%);border-radius:20px}
+.tree-lines path{stroke:rgba(139,92,246,.38);stroke-width:2;filter:drop-shadow(0 0 4px rgba(139,92,246,.35))}
+.tree-node{box-shadow:0 0 0 1px rgba(196,181,253,.22),0 0 18px rgba(139,92,246,.16);transition:transform .18s,box-shadow .18s}
+.tree-node:hover{transform:scale(1.08);box-shadow:0 0 0 1px rgba(216,180,254,.7),0 0 25px rgba(168,85,247,.38)}
+@media(max-width:700px){.admin-head-chips{gap:6px}.admin-head-chips span{font-size:11px;padding:6px 8px}.dn-payment-note{align-items:stretch;flex-direction:column}.dn-payment-note .btn{width:100%}.premium-payment-warning{font-size:13px}}

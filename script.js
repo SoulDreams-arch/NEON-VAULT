@@ -15,7 +15,7 @@ const OWNER_TAG = {id:'owner',ic:'👑',n:'Владелец',c:'#fbbf24',g:'crea
    links: кнопки-ссылки (только https://), requisites: реквизиты с кнопкой «копировать».
    goal*: необязательная цель сбора — заполняй сам и обновляй вручную. */
 const DONATE = {
-  links: [ /* { label:'DonationAlerts', url:'https://www.donationalerts.com/r/ТВОЙ_НИК' }, { label:'Boosty', url:'https://boosty.to/ТВОЙ_НИК' } */ ],
+  links: [ { label:'DonationAlerts', url:'https://www.donationalerts.com/r/scrxld' } ],
   requisites: [ /* { label:'Карта', value:'0000 0000 0000 0000' }, { label:'USDT (TRC20)', value:'T...' } */ ],
   goalTitle: '', goalTarget: 0, goalCurrent: 0, goalUnit: '₽'
 };
