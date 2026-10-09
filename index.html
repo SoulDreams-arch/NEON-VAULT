@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEON VAULT — игровое казино (демо)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="bg"><i></i><i></i><i></i></div>
+
+<!-- ЭКРАН ЗАГРУЗКИ -->
+<div id="loader">
+  <div class="ld-coin"><div><span>$</span><span>★</span></div></div>
+  <div class="ld-title" id="ldTitle"></div>
+  <div class="ld-bar"><b id="ldBar"></b></div>
+  <div class="ld-txt" id="ldTxt">Запуск хранилища…</div>
+</div>
+
+<!-- ВХОД -->
+<div id="auth">
+  <div class="card auth-box">
+    <h2 class="orb">Добро пожаловать</h2>
+    <p>Войди, чтобы сохранить баланс и свой профиль</p>
+    <div id="gBtn"></div>
+    <div id="gHint">Вход через Google пока не настроен. Вставь свой <b>Client ID</b> в переменную <code>GOOGLE_CLIENT_ID</code> в начале скрипта (инструкция в чате).</div>
+    <div class="divider">или как гость</div>
+    <input class="inp" id="guestName" maxlength="20" placeholder="Придумай ник">
+    <button class="btn full" id="guestGo">Играть</button>
+  </div>
+</div>
+
+<!-- ПРИЛОЖЕНИЕ -->
+<div id="app">
+  <div id="stage">
+    <header class="card">
+      <div class="logo">NEON VAULT</div>
+      <div class="bal" id="bal">🪙 <span id="balN">0</span></div>
+      <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b></div>
+    </header>
+
+    <div id="viewport">
+      <!-- ЛОББИ -->
+      <section class="view active" id="v-lobby">
+        <div class="card hero">
+          <div>
+            <h1 class="orb">Привет, <span id="lobNick"></span>!</h1>
+            <p class="sub" style="margin:0 0 16px">Играй на виртуальные монеты — всё понарошку, только ради красоты и фана.</p>
+            <button class="btn gold" id="bonusBtn">🎁 Ежедневный бонус</button>
+          </div>
+        </div>
+        <div class="games">
+          <div class="card gcard" data-go="slots"><span class="ic">🎰</span><h3>Слоты</h3><p>Нажми и крути барабаны</p></div>
+          <div class="card gcard" data-go="wheel"><span class="ic">🎡</span><h3>Колесо</h3><p>Раскрути и жди удачу</p></div>
+          <div class="card gcard" data-go="coin"><span class="ic">🪙</span><h3>Монетка</h3><p>Орёл или решка</p></div>
+        </div>
+        <p class="disc">⚠️ Игровая валюта не имеет реальной стоимости и не выводится. Это демонстрация оформления.</p>
+      </section>
+
+      <!-- СЛОТЫ -->
+      <section class="view" id="v-slots">
+        <div class="card gamebox">
+          <h1 class="orb">🎰 Слоты</h1><p class="sub">Три одинаковых — джекпот, две — ставка возвращается</p>
+          <div class="slots"><div class="reel"><span>🍒</span></div><div class="reel"><span>🍋</span></div><div class="reel"><span>7️⃣</span></div></div>
+          <div class="bets"></div>
+          <button class="btn gold" id="spinS" style="font-size:18px;padding:15px 50px">КРУТИТЬ</button>
+          <div class="res" id="resS"></div>
+          <div class="pay">🍒×5 · 🍋×8 · 🔔×10 · ⭐×15 · 💎×25 · 7️⃣×50</div>
+        </div>
+      </section>
+
+      <!-- КОЛЕСО -->
+      <section class="view" id="v-wheel">
+        <div class="card gamebox">
+          <h1 class="orb">🎡 Колесо удачи</h1><p class="sub">Жми — и смотри, куда укажет стрелка</p>
+          <div class="wwrap"><div class="ptr"></div><div class="wheel" id="wheel"></div><div class="wcap">★</div></div>
+          <div class="bets"></div>
+          <button class="btn gold" id="spinW" style="font-size:18px;padding:15px 50px">КРУТИТЬ</button>
+          <div class="res" id="resW"></div>
+        </div>
+      </section>
+
+      <!-- МОНЕТКА -->
+      <section class="view" id="v-coin">
+        <div class="card gamebox">
+          <h1 class="orb">🪙 Монетка</h1><p class="sub">Угадал сторону — получи ×1.95</p>
+          <div class="coinwrap" id="coinWrap"><div class="coin3d" id="coin3d"><div class="face">🦅</div><div class="face b">🌙</div></div></div>
+          <div class="pick"><button class="btn ghost on" data-side="0">🦅 Орёл</button><button class="btn ghost" data-side="1">🌙 Решка</button></div>
+          <div class="bets"></div>
+          <button class="btn gold" id="spinC" style="font-size:18px;padding:15px 50px">ПОДБРОСИТЬ</button>
+          <div class="res" id="resC"></div>
+        </div>
+      </section>
+
+      <!-- ПРОФИЛЬ -->
+      <section class="view" id="v-profile">
+        <div class="card pwrap">
+          <div class="banner" id="banner"></div>
+          <div class="phead">
+            <div class="av big" id="bigAv"></div>
+            <div><div class="nick" id="bigNick"></div><div id="mail" style="font-size:13px;color:#a5a3c4"></div></div>
+          </div>
+          <div class="stats">
+            <div class="stat"><b id="stC">0</b><span>Монеты</span></div>
+            <div class="stat"><b id="stG">0</b><span>Игр сыграно</span></div>
+            <div class="stat"><b id="stW">0</b><span>Всего выиграно</span></div>
+            <div class="stat"><b id="stB">0</b><span>Лучший выигрыш</span></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="card panel">
+            <h3>👤 Ник</h3>
+            <input class="inp" id="nickIn" maxlength="20">
+            <label class="lbl">Эффект и цвет ника</label>
+            <div class="row"><select class="inp" id="fxSel" style="flex:1"><option value="plain">Обычный</option><option value="neon">Неон</option><option value="grad">Радужный</option><option value="gold">Золотой</option></select><input type="color" id="nickCol"></div>
+            <label class="lbl">Цвет акцента сайта</label>
+            <input type="color" id="accCol">
+          </div>
+          <div class="card panel">
+            <h3>🖼 Аватарка</h3>
+            <div class="emo" id="emo"></div>
+            <div class="row" style="margin-top:14px"><label class="btn ghost" style="cursor:pointer">📁 Загрузить своё<input type="file" id="avFile" accept="image/*" hidden></label></div>
+          </div>
+          <div class="card panel" style="grid-column:1/-1">
+            <h3>🎨 Фон профиля</h3>
+            <div class="swatches" id="sws"></div>
+            <div class="row" style="margin-top:14px"><input type="color" id="bgCol"><label class="btn ghost" style="cursor:pointer">📁 Своя картинка<input type="file" id="bgFile" accept="image/*" hidden></label></div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:18px"><button class="btn ghost" id="resetBal">♻️ Сбросить баланс до 1000</button><button class="btn ghost" id="logout">🚪 Выйти</button></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ВКЛАДКИ СПРАВА -->
+  <nav id="nav">
+    <button class="nbtn on" data-view="lobby"><em>🏠</em>Лобби</button>
+    <button class="nbtn" data-view="slots"><em>🎰</em>Слоты</button>
+    <button class="nbtn" data-view="wheel"><em>🎡</em>Колесо</button>
+    <button class="nbtn" data-view="coin"><em>🪙</em>Монетка</button>
+    <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
+  </nav>
+</div>
+<div id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
