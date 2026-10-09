@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NEON VAULT — игровое казино (демо)</title>
+<title>NEON VAULT — Black Neon Social Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
+<canvas id="starfield" aria-hidden="true"></canvas>
 
 <!-- ЭКРАН ЗАГРУЗКИ -->
 <div id="loader">
@@ -67,17 +68,18 @@
   <div id="stage">
     <header class="card">
       <div class="logo"><img src="cat-sticker.webp" alt="" class="header-cat"><span>NEON VAULT</span></div>
-      <button class="nbtn vault-notify-btn" id="vaultNotifyBtn" type="button" aria-label="Уведомления">🔔 <span id="vaultNotifyCount" hidden>0</span></button><div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">🪙</span><span id="balN">0</span></div>
+      <button class="nbtn lang-toggle" id="languageToggle" type="button" aria-label="Change language">EN</button><button class="nbtn vault-notify-btn" id="vaultNotifyBtn" type="button" aria-label="Уведомления">🔔 <span id="vaultNotifyCount" hidden>0</span></button><div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">🪙</span><span id="balN">0</span></div>
       <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b><select id="presenceMode" aria-label="Статус" title="Статус" class="presence-select"><option value="online">● В сети</option><option value="busy">◐ Не беспокоить</option><option value="offline">○ Не в сети</option></select></div>
     </header>
 
     <div id="viewport">
       <!-- ПРОГРЕСС И ДОСТИЖЕНИЯ -->
       <section class="view" id="v-progress">
-        <div class="card hero progress-hero"><div><span class="eyebrow">YOUR JOURNEY</span><h1 class="orb">Твой путь в NEON VAULT</h1><p class="sub">Собирай питомцев, открывай достижения и забирай ежедневные награды.</p></div><div class="progress-level"><span>УРОВЕНЬ</span><b id="progressLevel">1</b><small id="progressXp">0 XP</small></div></div>
+        <div class="card hero progress-hero tree-hero"><div><span class="eyebrow">THE CONSTELLATION</span><h1 class="orb">Древо пути</h1><p class="sub">Каждый вход, игра и доброе действие зажигают новую звезду в твоём созвездии.</p></div><div class="progress-level"><span>УРОВЕНЬ</span><b id="progressLevel">1</b><small id="progressXp">0 XP</small></div></div>
+        <section class="card constellation-panel"><div class="constellation-head"><div><span class="eyebrow">YOUR LEGACY</span><h2 class="orb">Созвездие достижений</h2><p class="sub">Исследуй ветви: серия входов, игры, коллекция и сообщество.</p></div><span class="tree-key"><i></i> Открыто <i class="dim"></i> Впереди</span></div><div class="constellation-scroll"><div class="achievement-tree" id="achievementTree"><svg class="tree-lines" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true"><path d="M500 470 C500 390 500 360 500 300 M500 360 C400 320 330 270 230 210 M500 360 C600 320 680 270 780 210 M500 300 C430 250 410 180 390 120 M500 300 C570 250 600 180 620 120 M500 470 C360 480 240 430 130 360 M500 470 C640 480 760 430 870 360"/></svg><button class="tree-node root" data-tree-node="root"><span>✦</span><b>NEON VAULT</b><small>Твоё начало</small></button><button class="tree-node branch daily" data-tree-node="daily"><span>☼</span><b>Страж рассвета</b><small>Ежедневные входы</small><i class="tree-progress"><u style="width:12%"></u></i></button><button class="tree-node branch games" data-tree-node="games"><span>◈</span><b>Азарт звёзд</b><small>Игровые раунды</small><i class="tree-progress"><u style="width:18%"></u></i></button><button class="tree-node branch pets" data-tree-node="pets"><span>✧</span><b>Зверинец</b><small>Коллекция питомцев</small><i class="tree-progress"><u style="width:8%"></u></i></button><button class="tree-node branch social" data-tree-node="social"><span>⌘</span><b>Связи созвездий</b><small>Друзья и общение</small><i class="tree-progress"><u style="width:5%"></u></i></button><button class="tree-node branch creator" data-tree-node="creator"><span>✎</span><b>Искра творца</b><small>Идеи и рисунки</small><i class="tree-progress"><u style="width:0%"></u></i></button><button class="tree-node branch vault" data-tree-node="vault"><span>♜</span><b>Хранитель Vault</b><small>Особые вехи</small><i class="tree-progress"><u style="width:0%"></u></i></button></div></div><div class="tree-detail" id="treeDetail"><span class="tree-detail-icon">☼</span><div><b>Страж рассвета</b><p>Заходи каждый день, чтобы поддерживать серию и открывать новые уровни этой ветви.</p><small>Первая веха: 3 дня подряд</small></div></div></section>
         <section class="card panel"><div class="section-title"><div><span class="eyebrow">DAILY ROUTINE</span><h2 class="orb">Задания дня</h2><p class="sub">Награды начисляются сервером и доступны один раз в день.</p></div></div><div id="dailyQuestGrid" class="master-grid"><div class="empty-state">Загружаем задания…</div></div></section>
-        <section class="card panel"><div class="section-title"><div><span class="eyebrow">MILESTONES</span><h2 class="orb">Достижения</h2><p class="sub">Новые этапы открываются по мере твоего прогресса.</p></div><span id="achievementCount" class="pill-live">0 ОТКРЫТО</span></div><div id="achievementGrid" class="master-grid"><div class="empty-state">Загружаем достижения…</div></div></section>
-        <section class="card panel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации. Используй этот инструмент только для реальных нарушений.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID или точный ник игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">MILESTONES</span><h2 class="orb">Открытые достижения</h2><p class="sub">Новые этапы открываются по мере твоего прогресса.</p></div><span id="achievementCount" class="pill-live">0 ОТКРЫТО</span></div><div id="achievementGrid" class="master-grid"><div class="empty-state">Загружаем достижения…</div></div></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID или точный ник игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section>
       </section>
       <!-- ЛОББИ -->
       <section class="view active" id="v-lobby">
@@ -240,6 +242,12 @@
         <div class="card panel premium-customize"><h3>🎨 Моя персонализация</h3><p class="sub">Доступна только активным Premium-пользователям. Для оплаты нужно подключить платёжного провайдера; кнопки тарифов пока не списывают деньги и не выдают подписку.</p><label class="premium-label" for="premiumBanner">URL баннера (HTTPS)</label><input class="inp" id="premiumBanner" maxlength="500" placeholder="https://…"><label class="premium-label" for="premiumPet">Питомец около ника</label><select class="inp" id="premiumPet"><option value="">Без питомца</option></select><button class="btn" id="premiumSave" type="button">Сохранить персонализацию</button><div id="premiumHint" class="sub"></div></div>
       </section>
 
+      <!-- VAULT DOODLE -->
+      <section class="view" id="v-doodle">
+        <div class="card doodle-hero"><span class="eyebrow">NEON VAULT ORIGINAL</span><h1 class="orb">Vault Doodle</h1><p class="sub">Нарисуй слово за 60 секунд. Мини-режим для разминки — сетевые комнаты можно подключить отдельным этапом.</p><div class="doodle-stats"><span>РАУНД <b id="doodleRound">01</b></span><span>ОЧКИ <b id="doodleScore">0</b></span><span>ВРЕМЯ <b id="doodleTimer">60</b></span></div></div>
+        <div class="doodle-layout"><section class="card doodle-board-wrap"><div class="doodle-toolbar"><div><span class="eyebrow">CANVAS</span><b>Твоя доска</b></div><div class="doodle-tools"><input type="color" id="doodleColor" value="#ffffff" aria-label="Цвет кисти"><input type="range" id="doodleSize" min="2" max="24" value="6" aria-label="Размер кисти"><button class="btn ghost" id="doodleEraser" type="button">Ластик</button><button class="btn ghost" id="doodleClear" type="button">Очистить</button></div></div><canvas id="doodleCanvas" width="1200" height="700" aria-label="Поле для рисования"></canvas><div class="doodle-footer"><span id="doodlePrompt">Нажми «Новое слово», чтобы начать раунд.</span><button class="btn gold" id="doodleStart" type="button">Новое слово</button></div></section><aside class="card doodle-side"><span class="eyebrow">WORD DECK</span><h3>Тема раунда</h3><p class="sub">Выбери одно из трёх слов, а затем нарисуй его так, чтобы другой игрок смог угадать.</p><div id="doodleChoices" class="doodle-choices"><button class="doodle-choice" type="button" disabled>Три слова появятся здесь</button></div><div class="doodle-tip"><b>✦ Подсказка</b><p>Начинай с больших форм, не пиши буквы и используй контрастные линии.</p></div><button class="btn ghost full" id="doodleReveal" type="button">Показать слово</button></aside></div>
+      </section>
+
       <!-- СЛОТЫ -->
       <section class="view" id="v-slots">
         <div class="card gamebox">
@@ -318,6 +326,13 @@
         <div class="card panel server-leaderboard-panel"><div class="section-title"><div><span class="eyebrow">LIVE DATABASE</span><h2 class="orb">Рейтинг сервера</h2><p class="sub">Рейтинг по сохранённым данным аккаунтов, а не только по этому браузеру.</p></div><select class="inp" id="serverTopMetric" aria-label="Метрика рейтинга"><option value="won">Всего выиграно</option><option value="coins">Монеты</option><option value="games">Количество игр</option><option value="best">Лучший выигрыш</option><option value="pets">Питомцы</option></select></div><div id="serverTopList" class="server-top-list"><div class="empty-state">Загрузка рейтинга сервера…</div></div></div>
       </section>
 
+      <!-- SETTINGS -->
+      <section class="view" id="v-settings">
+        <div class="card hero settings-hero"><div><span class="eyebrow">CONTROL ROOM</span><h1 class="orb">Настройки</h1><p class="sub">Профиль, внешний вид и поведение NEON VAULT — подстрой под себя.</p></div><span class="settings-glyph">⚙</span></div>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">APPEARANCE</span><h2 class="orb">Персонализация профиля</h2><p class="sub">Изменения здесь видны в твоём публичном профиле.</p></div></div><div id="profileEditorMount"></div></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">PREFERENCES</span><h2 class="orb">Настройки сайта</h2><p class="sub">Язык, анимации и расположение блоков лобби.</p></div></div><div class="settings-options"><label>Язык интерфейса<select class="inp" id="siteLanguage"><option value="ru">Русский</option><option value="en">English</option></select></label><label>Анимации<select class="inp" id="motionPreference"><option value="full">Полные</option><option value="reduced">Уменьшенные</option></select></label><label>Размер интерфейса<select class="inp" id="densityPreference"><option value="comfortable">Комфортный</option><option value="compact">Компактный</option></select></label><button class="btn" id="saveSiteSettings" type="button">Сохранить настройки</button><button class="btn ghost" id="resetLobbyLayout" type="button">Сбросить расположение блоков</button></div></section>
+        <section class="card panel"><span class="eyebrow">ACCOUNT</span><h2 class="orb">Аккаунт</h2><p class="sub">Выйти из текущего аккаунта на этом устройстве.</p><button class="btn ghost" id="settingsLogout" type="button">🚪 Выйти из аккаунта</button></section>
+      </section>
       <!-- ПРОФИЛЬ -->
       <section class="view" id="v-profile">
         <div class="card pwrap">
@@ -394,12 +409,14 @@
     <button class="nbtn" data-view="tap"><em>🐾</em>Тапалка</button>
     <button class="nbtn" data-view="evolution"><em>✧</em>Эволюция</button>
     <button class="nbtn" data-view="games"><em>🎮</em>Игры и общий чат</button>
+    <button class="nbtn" data-view="doodle"><em>✎</em>Vault Doodle</button>
     <button class="nbtn" data-view="top"><em>🏆</em>Топ</button>
     <button class="nbtn" data-view="progress"><em>🌿</em>Прогресс</button>
     <button class="nbtn" data-view="friends"><em>👥</em>Друзья</button>
     <button class="nbtn" data-view="messenger"><em>💬</em>Мессенджер</button>
     <button class="nbtn" data-view="admin" id="adminNav" hidden><em>👑</em>Админ-панель</button>
     <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
+    <button class="nbtn" data-view="settings"><em>⚙</em>Настройки</button>
     <button class="nbtn" data-view="premium"><em>✦</em>Premium</button>
   </nav>
 </div>
@@ -409,5 +426,6 @@
 
 <script src="script.js?v=11"></script>
 <script src="master.js?v=2"></script>
+<script src="ultimate.js?v=2"></script>
 </body>
 </html>
