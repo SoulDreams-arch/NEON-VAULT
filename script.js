@@ -65,7 +65,7 @@ function login(id,name,pic,email){
 function enter(a){
   me=a;LS.set('nv_cur',a.id);save();
   $('#auth').style.display='none';$('#app').style.display='flex';
-  render();toast('Добро пожаловать, '+me.name+'!');
+  render();buildWipe();toast('Добро пожаловать, '+me.name+'!');
 }
 function save(){if(me){accounts[me.id]=me;LS.set('nv_acc',accounts)}}
 $('#logout').onclick=()=>{LS.set('nv_cur',null);me=null;location.reload()};
@@ -119,19 +119,63 @@ setInterval(bonusTick,1000);
 $('#bonusBtn').onclick=()=>{me.bonusAt=Date.now();addCoins(500);rain();toast('🎁 +500 монет!');bonusTick()};
 
 /* ---------- 3D-навигация ---------- */
-let curView='lobby',navBusy=false,lastAnim=0;
-function go(id){
+let curView='lobby',navBusy=false;
+
+/* логотип: кольцо из монет + NEON VAULT по центру (рисуется на canvas) */
+function drawCoin(x,px,py,r){
+  const g=x.createRadialGradient(px-r*.3,py-r*.35,r*.1,px,py,r);
+  g.addColorStop(0,'#fff6bf');g.addColorStop(.5,'#fbbf24');g.addColorStop(1,'#b45309');
+  x.shadowColor='#fbbf24';x.shadowBlur=r*.8;x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,7);x.fill();x.shadowBlur=0;
+  x.beginPath();x.arc(px,py,r*.74,0,7);x.strokeStyle='rgba(120,53,15,.75)';x.lineWidth=r*.1;x.stroke();
+  x.fillStyle='#5b3a00';x.font=`900 ${r}px Orbitron, sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('$',px,py+r*.04);
+}
+function drawLogo(W,H,dpr){
+  const c=document.createElement('canvas');c.width=W*dpr;c.height=H*dpr;
+  const x=c.getContext('2d');x.scale(dpr,dpr);
+  const bg=x.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.7);
+  bg.addColorStop(0,'#2a1460');bg.addColorStop(1,'#05040c');x.fillStyle=bg;x.fillRect(0,0,W,H);
+  const cx=W/2,cy=H/2,m=Math.min(W,H),R=m*.32,cr=m*.075,inner=R-cr;
+  x.beginPath();x.arc(cx,cy,R,0,7);x.strokeStyle='rgba(168,85,247,.45)';x.lineWidth=3;x.shadowColor='#a855f7';x.shadowBlur=26;x.stroke();x.shadowBlur=0;
+  for(let i=0;i<12;i++){const a=i/12*Math.PI*2-Math.PI/2;drawCoin(x,cx+Math.cos(a)*R,cy+Math.sin(a)*R,cr)}
+  x.textAlign='center';x.textBaseline='middle';
+  const tw=inner*1.75;x.font='900 100px Orbitron, sans-serif';
+  let fs=100*tw/x.measureText('NEON VAULT').width,lines=['NEON VAULT'];
+  if(fs<24){lines=['NEON','VAULT'];fs=Math.min(m*.13,100*tw/x.measureText('VAULT').width)}
+  const g=x.createLinearGradient(0,cy-fs,0,cy+fs);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#22d3ee');g.addColorStop(1,'#a855f7');
+  x.fillStyle=g;x.shadowColor='#a855f7';x.shadowBlur=fs*.55;x.font=`900 ${fs}px Orbitron, sans-serif`;
+  lines.forEach((t,i)=>x.fillText(t,cx,cy+(i-(lines.length-1)/2)*fs*1.1));
+  return c;
+}
+
+/* сетка квадратиков, каждый показывает свой кусочек логотипа */
+let wipeKey='',wipeUrl='';
+async function buildWipe(){
+  const W=innerWidth,H=innerHeight,key=W+'x'+H;if(key===wipeKey)return;wipeKey=key;
+  try{await document.fonts.load('900 60px Orbitron')}catch{}
+  const cv=drawLogo(W,H,Math.min(2,devicePixelRatio||1));
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  if(wipeUrl)URL.revokeObjectURL(wipeUrl);wipeUrl=URL.createObjectURL(blob);
+  const s=W<700?44:60,cols=Math.ceil(W/s),rows=Math.ceil(H/s),frag=document.createDocumentFragment();
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const t=document.createElement('i'),d=(c/cols+r/rows)/2;
+    t.style.cssText=`left:${c*s}px;top:${r*s}px;width:${s+1}px;height:${s+1}px;background-image:url("${wipeUrl}");background-size:${W}px ${H}px;background-position:-${c*s}px -${r*s}px;--d:${Math.round(d*240+Math.random()*200)}ms;--d2:${Math.round((1-d)*240+Math.random()*200)}ms`;
+    frag.appendChild(t);
+  }
+  const w=$('#wipe');w.innerHTML='';w.appendChild(frag);
+}
+let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(me&&!navBusy)buildWipe()},400)});
+
+async function go(id){
   if(navBusy||id===curView)return;navBusy=true;
-  let n;do{n=1+Math.floor(Math.random()*5)}while(n===lastAnim);lastAnim=n;
-  const from=$('#v-'+curView),to=$('#v-'+id),cls='a'+n;
   $$('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===id));
-  from.classList.add('out',cls);
-  setTimeout(()=>{
-    from.classList.remove('out',cls,'active');
-    to.classList.add('active','in',cls);to.scrollTop=0;
-    setTimeout(()=>{to.classList.remove('in',cls);navBusy=false},650);
-    curView=id;
-  },430);
+  await buildWipe();
+  const w=$('#wipe');w.style.display='block';void w.offsetWidth;w.classList.add('cover');   // квадраты с логотипом закрывают экран
+  await sleep(720);
+  $('#v-'+curView).classList.remove('active');const to=$('#v-'+id);to.classList.add('active');to.scrollTop=0;curView=id;  // вкладка меняется под логотипом
+  await sleep(350);
+  w.classList.add('leave');                                                                // квадраты уходят
+  await sleep(720);
+  w.classList.remove('cover','leave');w.style.display='none';navBusy=false;
 }
 $$('.nbtn').forEach(b=>b.onclick=()=>go(b.dataset.view));
 $$('.gcard').forEach(c=>{

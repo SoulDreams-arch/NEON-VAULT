@@ -77,17 +77,12 @@ h1.orb{font-size:clamp(26px,4vw,42px);margin-bottom:6px}
 .nbtn.on{background:linear-gradient(160deg,var(--accent),#0000 140%);border-color:var(--accent);color:#fff;box-shadow:0 0 28px -4px var(--accent),inset 0 0 18px #fff2;transform:translateX(-10px)}
 .nbtn.on::after{content:"";position:absolute;right:-14px;top:22%;bottom:22%;width:4px;border-radius:9px;background:var(--accent2);box-shadow:0 0 14px var(--accent2)}
 
-/* 3D переходы */
-.a1.out{animation:o1 .42s ease-in forwards}.a1.in{animation:i1 .55s cubic-bezier(.2,.9,.3,1.1)}
-@keyframes o1{to{transform:rotateY(90deg) scale(.8);opacity:0}}@keyframes i1{from{transform:rotateY(-90deg) scale(.8);opacity:0}}
-.a2.out{animation:o2 .42s ease-in forwards}.a2.in{animation:i2 .55s cubic-bezier(.2,.9,.3,1.1)}
-@keyframes o2{to{transform:rotateX(-90deg) translateZ(-200px);opacity:0}}@keyframes i2{from{transform:rotateX(90deg) translateZ(-200px);opacity:0}}
-.a3.out{animation:o3 .45s ease-in forwards}.a3.in{animation:i3 .6s cubic-bezier(.2,.9,.3,1.1)}
-@keyframes o3{to{transform:scale(.1) rotateZ(260deg);opacity:0}}@keyframes i3{from{transform:scale(2.4) rotateZ(-260deg);opacity:0}}
-.a4.out{transform-origin:100% 50%;animation:o4 .45s ease-in forwards}.a4.in{transform-origin:0 50%;animation:i4 .55s cubic-bezier(.2,.9,.3,1.1)}
-@keyframes o4{to{transform:translateX(-30%) rotateY(-100deg);opacity:0}}@keyframes i4{from{transform:translateX(30%) rotateY(100deg);opacity:0}}
-.a5.out{animation:o5 .5s ease-in forwards}.a5.in{animation:i5 .65s cubic-bezier(.2,.9,.3,1.05)}
-@keyframes o5{to{transform:rotateY(180deg) rotateZ(25deg) scale(.6);opacity:0}}@keyframes i5{from{transform:rotateY(-180deg) rotateZ(-25deg) scale(.6);opacity:0}}
+/* переход: логотип из квадратиков */
+#wipe{position:fixed;inset:0;z-index:120;display:none;overflow:hidden;pointer-events:none}
+#wipe.cover{pointer-events:auto}
+#wipe i{position:absolute;display:block;background-color:#05040c;background-repeat:no-repeat;transform:scale(0);transition:transform .22s cubic-bezier(.3,1.5,.5,1) var(--d)}
+#wipe.cover i{transform:scale(1)}
+#wipe.cover.leave i{transform:scale(0);transition:transform .22s ease-in var(--d2)}
 
 /* лобби */
 .hero{padding:30px;margin-bottom:22px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;position:relative;overflow:hidden}
