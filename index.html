@@ -7,14 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
 
 <!-- ЭКРАН ЗАГРУЗКИ -->
 <div id="loader">
-  <div class="ld-coin"><div><span>$</span><span>★</span></div></div>
+  <div class="ld-coin ld-cat-logo"><img src="cat-sticker.webp" alt="NEON VAULT — котик" class="ld-cat-img"></div>
   <div class="ld-title" id="ldTitle"></div>
   <div class="ld-bar"><b id="ldBar"></b></div>
   <div class="ld-txt" id="ldTxt">Запуск хранилища…</div>
@@ -49,7 +49,7 @@
 
     <form class="aform" data-f="reg" id="fReg" autocomplete="on">
       <input class="inp" id="rgNick" name="username" autocomplete="username" maxlength="20" placeholder="Придумай ник (2–20 символов)">
-      <div class="pw"><input class="inp" id="rgPass" name="new-password" type="password" autocomplete="new-password" placeholder="Пароль (минимум 6 символов)"><button type="button" class="eye" tabindex="-1" aria-label="Показать пароль">👁</button></div>
+      <div class="pw"><input class="inp" id="rgPass" name="new-password" type="password" autocomplete="new-password" placeholder="Пароль (минимум 8 символов)"><button type="button" class="eye" tabindex="-1" aria-label="Показать пароль">👁</button></div>
       <input class="inp" id="rgPass2" type="password" autocomplete="new-password" placeholder="Повтори пароль">
       <button class="btn full" type="submit">Создать аккаунт</button>
     </form>
@@ -66,7 +66,7 @@
 <div id="app">
   <div id="stage">
     <header class="card">
-      <div class="logo">NEON VAULT</div>
+      <div class="logo"><img src="cat-sticker.webp" alt="" class="header-cat"><span>NEON VAULT</span></div>
       <div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">¢</span><span id="balN">0</span></div>
       <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b></div>
     </header>
@@ -92,6 +92,25 @@
           <div class="card gcard" data-go="wheel"><span class="ic">🎡</span><h3>Колесо</h3><p>Раскрути и жди удачу</p></div>
           <div class="card gcard" data-go="coin"><span class="ic">🪙</span><h3>Монетка</h3><p>Орёл или решка</p></div>
         </div>
+
+        <section class="card lobby-poll" id="lobbyPoll">
+          <div class="section-title"><div><span class="eyebrow">COMMUNITY LAB</span><h2 class="orb">💡 Предложи обновление</h2><p class="sub">Поделись идеей для NEON VAULT — игроки смогут голосовать за предложения.</p></div><span class="pill-live">● ИДЕИ ИГРОКОВ</span></div>
+          <form id="ideaForm" class="idea-form"><input class="inp" id="ideaTitle" maxlength="90" placeholder="Например: добавить питомца-аксолотля" required><textarea class="inp" id="ideaDetails" maxlength="500" placeholder="Расскажи подробнее (необязательно)" rows="2"></textarea><button class="btn" type="submit">🚀 Отправить идею</button></form>
+          <div class="bot-note"><span class="bot-avatar">🤖</span><div><b>VaultBot · Бот сообщества</b><p>Новые предложения публикуются в лобби и помечаются для внимания ролей: <strong>Создатель</strong>, <strong>Архитектор</strong>, <strong>Хозяин хранилища</strong> и <strong>Основатель</strong>.</p></div></div>
+          <div id="ideaFeed" class="idea-feed"></div>
+        </section>
+
+        <section class="card updates-card" id="updatesCard">
+          <details id="updatesDetails">
+            <summary><span class="updates-mark">✦</span><span class="updates-summary-copy"><b>Что нового в NEON VAULT</b><small>История обновлений · нажми, чтобы раскрыть</small></span><span class="updates-version">PATCH NOTES</span><span class="updates-chevron">⌄</span></summary>
+            <div class="updates-content"><div class="updates-lead"><span>🛠️</span><div><b>Журнал обновлений</b><p>Коротко о свежих функциях и изменениях проекта.</p></div></div>
+              <article class="patch-item"><span class="patch-icon">🌌</span><div><div class="patch-meta"><b>NEON REDESIGN</b><time>Оформление</time></div><p>Неоновая тема, котик-логотип с анимацией, обновлённые панели и новый экран эволюции с шансом успеха 30%.</p></div></article>
+              <article class="patch-item"><span class="patch-icon">🐾</span><div><div class="patch-meta"><b>PET CLUB</b><time>Питомцы</time></div><p>Коллекция питомцев, персонализация, теги питомцев, каталог и система эволюции.</p></div></article>
+              <article class="patch-item"><span class="patch-icon">💬</span><div><div class="patch-meta"><b>COMMUNITY</b><time>Общение</time></div><p>Добавлены интерфейс мессенджера, групповые чаты и доска идей сообщества.</p></div></article>
+            </div>
+          </details>
+        </section>
+
         <div class="card donate" id="donate">
           <div class="dn-head"><span class="dn-ic">💜</span>
             <div><h3 class="orb">Поддержать автора</h3>
@@ -135,18 +154,52 @@
           <div class="pet-zone-head"><div><span class="eyebrow">NEON PET CLUB</span><h2>🐾 Твоя коллекция</h2><p class="sub">Выбирай питомца, открывай редкие формы и береги любимца в испытании эволюции.</p></div><button class="btn ghost" id="openPetPicker" type="button">Выбрать питомца</button></div>
           <div id="petPicker" class="pet-picker" hidden><h3>С кем начнём?</h3><p>Выбери одного бесплатного питомца — котика, зайца или мишку.</p><div id="starterPets" class="pet-catalog"></div></div>
           <div class="pet-current"><div class="pet-current-art" id="petCurrentArt">🐱</div><div class="pet-current-info"><span class="pet-rarity" id="petRarity">СТАРТОВЫЙ</span><h3 id="petName">Котик</h3><p id="petDescription">Твой первый пушистый друг.</p><small id="petOwnedInfo">Питомец активен</small></div></div>
-          <div class="evo-panel"><div><span class="eyebrow">РИСКОВОЕ ИСПЫТАНИЕ</span><h3>🎲 Разлом эволюции</h3><p>Ставка — любой купленный питомец от 100 000 монет. При успехе он эволюционирует; при проигрыше питомец сгорает, прогресс тапалки сбрасывается, и ты выбираешь нового бесплатного.</p><div class="evo-meta"><span id="evoChance">Шанс успеха: 30%</span><span id="evoCost">Ставка: 500 💗</span></div></div><button class="btn gold" id="evoRoll" type="button">Испытать удачу</button></div>
+          
           <div class="pet-zone-head catalog-head"><div><h3>💎 Каталог форм</h3><p class="sub">20 питомцев: 3 стартовых бесплатно, остальные покупаются за монеты.</p></div></div>
           <div id="petCatalog" class="pet-catalog"></div>
+        </div>
+      </section>
+
+      <!-- ЭВОЛЮЦИЯ: отдельная игровая вкладка -->
+      <section class="view" id="v-evolution">
+        <div class="evolution-screen card">
+          <div class="evo-screen-head">
+            <div><span class="eyebrow">NEON PET LAB • UPGRADE PORTAL</span><h1 class="orb">✦ Эволюция</h1><p class="sub">Поставь питомца и попробуй выбить форму дороже. Каждый запуск — новый шанс.</p></div>
+            <div class="evo-chance-pill"><span>ШАНС УСПЕХА</span><b>30%</b></div>
+          </div>
+          <div class="evo-arena">
+            <div class="evo-pedestal evo-stake-pedestal">
+              <div class="evo-orbit"></div><img id="evoStakeArt" src="cat-sticker.webp" alt="Твой питомец">
+              <div class="evo-pet-caption"><small>ТВОЯ СТАВКА</small><b id="evoStakeName">Котик любви</b><span id="evoStakeRarity">СТАРТОВЫЙ</span></div>
+            </div>
+            <div class="evo-portal"><div class="portal-ring ring-a"></div><div class="portal-ring ring-b"></div><div class="portal-core">✦</div><span class="portal-arrow">➜</span></div>
+            <div class="evo-pedestal evo-result-pedestal">
+              <div class="evo-orbit result-orbit"></div><img id="evoPrizeArt" src="cat-sticker.webp" alt="Возможная награда">
+              <div class="evo-pet-caption"><small>ВОЗМОЖНАЯ НАГРАДА</small><b id="evoPrizeName">Более редкий питомец</b><span>Случайная форма дороже ставки</span></div>
+            </div>
+          </div>
+          <div class="evo-control-card">
+            <div class="evo-control-info"><span class="eyebrow">ТВОЯ СТАВКА</span><h3 id="evoSelectedName">Выбранный питомец</h3><p id="evoSelectedHint">Для апгрейда нужен купленный питомец стоимостью от 100 000 монет.</p><div class="evo-meta"><span id="evoChance">Шанс успеха: 30%</span><span id="evoCost">Нужен купленный питомец от 100 000 🪙</span></div></div>
+            <button class="btn gold evo-launch" id="evoRoll" type="button">✦ Запустить эволюцию</button>
+          </div>
+          <div class="evo-warning"><span>⚠</span><div><b>Риск разлома</b><p>При успехе ставка заменяется случайным более дорогим питомцем из каталога. При проигрыше поставленный питомец сгорает, а прогресс тапалки сбрасывается. Перед запуском появится подтверждение.</p></div></div>
+          <div class="evo-lower-grid">
+            <div class="card panel"><h3>✧ Как это работает</h3><ol class="evo-steps"><li><b>Выбери ставку</b><span>Активный питомец должен быть куплен за монеты и стоить от 100 000.</span></li><li><b>Запусти портал</b><span>У каждого запуска фиксированный шанс успеха — 30%.</span></li><li><b>Забери новую форму</b><span>При победе получаешь случайного питомца из каталога дороже ставки.</span></li></ol></div>
+            <div class="card panel"><h3>🐾 Моя коллекция</h3><p class="sub">Выбери питомца в коллекции на вкладке «Тапалка», чтобы изменить ставку.</p><div id="evoMiniCollection" class="evo-mini-collection"></div><button class="btn ghost full" type="button" data-view="tap" id="evoToPets">Открыть коллекцию питомцев</button></div>
+          </div>
         </div>
       </section>
 
       <!-- ПАНЕЛЬ ВЛАДЕЛЬЦА -->
       <section class="view" id="v-admin">
         <div class="card panel admin-head"><span class="eyebrow">RESTRICTED ACCESS</span><h1 class="orb">👑 Панель владельца</h1><p class="sub">Инструменты управления NEON VAULT</p></div>
-        <div class="tap-upgrades"><div class="card panel"><h3>📊 Статистика</h3><div class="tap-stats"><div><small>Аккаунтов</small><b id="adminUsers">0</b></div><div><small>Монет у игроков</small><b id="adminCoins">0</b></div><div><small>Всего сердечек</small><b id="adminHearts">0</b></div></div></div>
-        <div class="card panel"><h3>🎁 Выдать монеты</h3><p>Начисление игровой валюты выбранному аккаунту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button></div>
-        <div class="card panel"><h3>🔐 Статус владельца</h3><p>Тег «Владелец» и панель видны только аккаунту с активированным ключом.</p><button class="btn ghost" id="ownerDeactivate" type="button">Снять статус владельца</button></div></div>
+        <div class="tap-upgrades admin-dashboard-grid">
+          <div class="card panel"><h3>📊 Статистика базы</h3><div class="tap-stats"><div><small>Аккаунтов</small><b id="adminUsers">0</b></div><div><small>Монет у игроков</small><b id="adminCoins">0</b></div><div><small>Всего сердечек</small><b id="adminHearts">0</b></div></div><p class="sub">Данные загружаются с сервера, а не из браузера владельца.</p></div>
+          <div class="card panel"><h3>🎁 Управление балансом</h3><p>Выбери аккаунт и выдай игровую валюту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button><input class="inp" id="adminGrantHearts" type="number" min="1" step="1" placeholder="Количество сердечек"><button class="btn full" id="adminGrantHeartsBtn" type="button">Начислить сердечки</button></div>
+          <div class="card panel"><h3>🛡️ Модерация аккаунтов</h3><p>Поиск по базе, блокировка/разблокировка и назначение роли модератора.</p><div class="row"><input class="inp" id="adminSearch" placeholder="Ник пользователя" style="flex:1;min-width:140px;margin:0"><button class="btn" id="adminSearchBtn" type="button">Найти</button></div><div class="admin-user-list" id="adminUserList"></div></div>
+          <div class="card panel"><h3>🧾 Журнал действий</h3><p>История входов, изменений пароля, начислений и модерации.</p><button class="btn ghost" id="adminAuditBtn" type="button">Загрузить журнал</button><div class="admin-user-list" id="adminAudit"></div></div>
+          <div class="card panel"><h3>🔐 Статус владельца</h3><p>Права проверяются сервером. Ключ владельца хранится только в переменных окружения сервера.</p><button class="btn ghost" id="ownerDeactivate" type="button">Снять статус владельца</button></div>
+        </div>
       </section>
 
       <!-- СЛОТЫ -->
@@ -182,6 +235,21 @@
           <button class="btn gold" id="spinC" style="font-size:18px;padding:15px 50px">ПОДБРОСИТЬ</button>
           <div class="res" id="resC"></div>
         </div>
+      </section>
+
+      <!-- МЕССЕНДЖЕР -->
+      <section class="view" id="v-messenger">
+        <div class="card fhead messenger-head"><span class="eyebrow">NEON COMMUNITY</span><h1 class="orb">💬 Мессенджер</h1><p class="sub">Личные сообщения, группы, медиа и питомцы друзей — всё в одном месте.</p><div class="row messenger-actions"><button class="btn" id="newGroupBtn" type="button">＋ Создать группу</button><button class="btn ghost" id="newDmBtn" type="button">✉ Написать другу</button></div></div>
+        <div class="messenger-shell card">
+          <aside class="chat-sidebar"><div class="chat-side-title"><b>Чаты</b><span id="chatCount" class="tiny-count">0</span></div><input class="inp chat-search" id="chatSearch" placeholder="Поиск чата…"><div id="chatList" class="chat-list"></div><div class="chat-sidebar-foot">∞ Группы без лимита участников</div></aside>
+          <section class="chat-main"><div id="chatEmpty" class="chat-empty"><div class="chat-empty-icon">✧</div><h3>Твоё пространство общения</h3><p>Выбери диалог слева или начни новый.</p></div>
+            <div id="chatActive" class="chat-active" hidden><header class="chat-header"><div class="chat-header-avatar" id="activeChatAvatar">✦</div><div class="chat-header-info"><b id="activeChatName">Чат</b><small id="activeChatMeta">Личный диалог</small></div><button class="btn ghost" id="showPetBtn" type="button">🐾 Показать питомца</button></header><div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+              <div class="chat-tools"><button type="button" class="chat-tool" id="emojiBtn" title="Эмодзи">😊</button><button type="button" class="chat-tool" id="stickerBtn" title="Стикеры">🐾</button><button type="button" class="chat-tool" id="gifBtn" title="GIF по ссылке">GIF</button><label class="chat-tool file-tool" title="Отправить картинку">▧<input type="file" id="chatImageInput" accept="image/*,.gif" hidden></label><span class="chat-tool-hint">Картинки · GIF · стикеры · эмодзи</span></div>
+              <div id="chatQuickPicker" class="chat-quick-picker" hidden></div><form id="chatCompose" class="chat-compose"><textarea id="chatText" maxlength="2000" rows="1" placeholder="Напиши сообщение…" required></textarea><button class="btn" type="submit">Отправить ➤</button></form>
+            </div>
+          </section>
+        </div>
+        <p class="chat-disclaimer">Примечание: эта сборка сохраняет чаты локально в браузере. Чтобы сообщения действительно доставлялись между устройствами и игроками онлайн, потребуется сервер и база данных.</p>
       </section>
 
       <!-- ДРУЗЬЯ -->
@@ -273,15 +341,22 @@
     </div>
   </div>
 
-  <!-- ВКЛАДКИ СПРАВА -->
+  <!-- ЛЕВАЯ БОКОВАЯ НАВИГАЦИЯ -->
   <nav id="nav">
+    <div class="side-brand" data-view="lobby" role="button" tabindex="0" aria-label="NEON VAULT — на главную">
+      <span class="side-cat-wrap"><img src="cat-sticker.webp" alt="" class="side-cat"></span>
+      <span class="side-brand-word">NEON <b>VAULT</b></span>
+      <small>PET CLUB</small>
+    </div>
     <button class="nbtn on" data-view="lobby"><em>🏠</em>Лобби</button>
-    <button class="nbtn" data-view="tap"><em>💗</em>Тапалка</button>
+    <button class="nbtn" data-view="tap"><em>🐾</em>Тапалка</button>
+    <button class="nbtn" data-view="evolution"><em>✧</em>Эволюция</button>
     <button class="nbtn" data-view="slots"><em>🎰</em>Слоты</button>
     <button class="nbtn" data-view="wheel"><em>🎡</em>Колесо</button>
     <button class="nbtn" data-view="coin"><em>🪙</em>Монетка</button>
     <button class="nbtn" data-view="top"><em>🏆</em>Топ</button>
     <button class="nbtn" data-view="friends"><em>👥</em>Друзья</button>
+    <button class="nbtn" data-view="messenger"><em>💬</em>Мессенджер</button>
     <button class="nbtn" data-view="admin" id="adminNav" hidden><em>👑</em>Админ-панель</button>
     <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
   </nav>
@@ -290,6 +365,6 @@
 <div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
 <div id="toast"></div>
 
-<script src="script.js?v=6"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>
