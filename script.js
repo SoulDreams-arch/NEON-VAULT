@@ -15,7 +15,8 @@ const GOOGLE_CLIENT_ID = '';
      const h=[...new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(s),iterations:150000,hash:'SHA-256'},k,256))].map(b=>b.toString(16).padStart(2,'0')).join('');
      console.log({s,h})})()
    и подставь s и h ниже. */
-const CREATOR = { s:'9e12c1d9a105cb46a8c1da3c5bb01b1d', h:'a5e49f68f6853b04203ebb1a27e454fd32e8508980f358d94748087e78d46c1a' };
+const CREATOR = { s:'owner-vault-2026-9f31', h:'2a9035d35b35d40a80de341c5279d7af0eb009c35857dd1d33f3f6d3432e3092' };
+const OWNER_TAG = {id:'owner',ic:'👑',n:'Владелец',c:'#fbbf24',g:'creator'};
 
 /* Пожертвования автору (блок внизу лобби). Пока пусто — блок покажет подсказку.
    links: кнопки-ссылки (только https://), requisites: реквизиты с кнопкой «копировать».
@@ -45,6 +46,7 @@ function norm(a){
   if(!Array.isArray(a.friends))a.friends=[];
   if(!Array.isArray(a.tags))a.tags=[];
   a.creator=a.creator===true;
+  a.owner=a.owner===true; a.tapCurrency=Math.max(0,+a.tapCurrency||0); a.tapLevel=Math.max(1,+a.tapLevel||1); a.tapPower=Math.max(1,+a.tapPower||1); a.tapPowerLv=Math.max(0,+a.tapPowerLv||0); a.tapIdle=Math.max(0,+a.tapIdle||0); a.tapIdleLv=Math.max(0,+a.tapIdleLv||0); a.tapXp=Math.max(0,+a.tapXp||0); a.tapLast=+a.tapLast||Date.now(); a.petId=typeof a.petId==='string'?a.petId:''; a.petRank=Math.max(0,+a.petRank||0); if(!Array.isArray(a.petOwned))a.petOwned=a.petId?['cat','bunny','bear',a.petId]:[]; if(!a.petNoTrade||typeof a.petNoTrade!=='object')a.petNoTrade={}; if(typeof a.petTagId!=='string')a.petTagId='';
   ['streak','bestStreak','donated','received'].forEach(k=>a[k]=+a[k]||0);
   if(typeof a.lastDay!=='string')a.lastDay='';
   if(!a.seen)a.seen=Date.now();
@@ -80,7 +82,7 @@ function uniqueName(base){
 }
 const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const newAcc=(id,type,name)=>({id,type,name,email:null,av:{t:'emoji',v:pick(EMOJI)},bg:{t:'grad',v:0},accent:'#a855f7',fx:'neon',nc:'#ffffff',
-  coins:1000,games:0,won:0,best:0,bonusAt:0,streak:0,bestStreak:0,lastDay:'',donated:0,received:0,friends:[],tags:[],creator:false,seen:Date.now(),on:false,created:Date.now()});
+  coins:1000,games:0,won:0,best:0,bonusAt:0,streak:0,bestStreak:0,lastDay:'',donated:0,received:0,friends:[],tags:[],creator:false,owner:false,tapCurrency:0,tapLevel:1,tapPower:1,tapPowerLv:0,tapIdle:0,tapIdleLv:0,tapXp:0,tapLast:Date.now(),petId:'',petRank:0,petOwned:[],seen:Date.now(),on:false,created:Date.now()});
 
 /* ---------- Пароли (PBKDF2 + соль, в открытом виде не хранятся) ---------- */
 const hex=u=>[...new Uint8Array(u)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -284,6 +286,8 @@ const topTier=a=>TAG_BY['r'+TIERS.reduce((m,t,i)=>a.best>=t[2]?i:m,0)];
 /* что видят другие: создательские теги — только у создателей, остальные — только если открыты */
 function shownTags(a){
   const list=(a.tags||[]).map(id=>TAG_BY[id]).filter(t=>t&&tagOpen(a,t)).slice(0,MAX_TAGS).sort((x,y)=>(y.g==='creator')-(x.g==='creator'));
+  const pt=(typeof PETS!=='undefined'?PETS:[]).find(p=>p.id===a.petTagId); if(pt&&(a.petOwned||[]).includes(pt.id)&&pt.price>=100000)list.push({id:'pet-'+pt.id,g:'pet',ic:'🐾',n:pt.name,c:'#c084fc'});
+  if(a.owner)list.unshift(OWNER_TAG);
   if(!list.some(t=>t.g!=='creator'))list.push(topTier(a));
   return list;
 }
@@ -318,6 +322,15 @@ function renderTags(){
     });
     box.appendChild(row);
   });
+  /* Кастомный тег купленного питомца */
+  const ownedTagPets=PETS.filter(p=>p.price>=100000&&(me.petOwned||[]).includes(p.id));
+  const ph=document.createElement('div');ph.className='tgh';ph.textContent='🐾 Тег питомца';box.appendChild(ph);
+  const pp=document.createElement('p');pp.className='secp';pp.textContent='Можно выбрать тег любого купленного питомца от 100 000 монет. Полученный через трейд питомец тоже подходит, но его нельзя передать дальше.';box.appendChild(pp);
+  const pr=document.createElement('div');pr.className='tpick';
+  const none=document.createElement('button');none.type='button';none.className='tpb'+(!me.petTagId?' on':'');none.textContent='Без тега питомца';none.onclick=()=>{me.petTagId='';save();render();};pr.appendChild(none);
+  ownedTagPets.forEach(p=>{const b=document.createElement('button');b.type='button';b.className='tpb'+(me.petTagId===p.id?' on':'');b.textContent='🐾 '+p.name;b.title='Поставить тег '+p.name;b.onclick=()=>{me.petTagId=p.id;save();render();};pr.appendChild(b)});
+  if(!ownedTagPets.length){const empty=document.createElement('small');empty.className='tpn';empty.textContent='Купи питомца в каталоге от 100 000 монет, чтобы открыть его тег.';pr.appendChild(empty)}
+  box.appendChild(pr);
   /* статус создателя */
   const foot=document.createElement('div');foot.className='tfoot';
   if(me.creator){
@@ -348,12 +361,12 @@ async function claimCreator(code){
   if(left)return toast(`Слишком много попыток. Подожди ${left} с`);
   let ok=false;try{ok=await hashPw(code,CREATOR.s,'pbkdf2')===CREATOR.h}catch{}
   if(!ok){const n=addFail(k);return toast(n>=5?`Слишком много попыток. Подожди ${lockLeft(k)} с`:'Неверный код')}
-  clearFail(k);me.creator=true;if(!me.tags.includes('c1'))me.tags=['c1',...me.tags].slice(0,MAX_TAGS);
+  clearFail(k);me.creator=true;me.owner=true;me.creator=true;if(!me.tags.includes('c1'))me.tags=['c1',...me.tags].slice(0,MAX_TAGS);
   save();render();rain();toast('👑 Добро пожаловать, создатель!');
 }
 
 function render(){
-  document.documentElement.style.setProperty('--accent',me.accent);
+  document.documentElement.style.setProperty('--accent',me.accent);applySiteTheme((me.petCustom||{}).site||'default');
   setAv($('#miniAv'));setAv($('#bigAv'));
   $('#miniNick').textContent=me.name;$('#lobNick').textContent=me.name;
   const bn=$('#bigNick');bn.textContent=me.name;bn.className='nick fx-'+me.fx;bn.style.setProperty('--nc',me.nc);
@@ -363,7 +376,7 @@ function render(){
   $$('#emo button').forEach(b=>b.classList.toggle('on',me.av.t==='emoji'&&b.textContent===me.av.v));
   $$('#sws .sw').forEach((b,i)=>b.classList.toggle('on',me.bg.t==='grad'&&me.bg.v===i));
   const bt=$('#bigTags');bt.replaceChildren(...shownTags(me).map(tagEl));
-  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();
+  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();renderTapper();renderAdmin();$('#adminNav').hidden=!me.owner;
 }
 function stats(){$('#stC').textContent=me.coins.toLocaleString('ru');$('#stG').textContent=me.games;$('#stW').textContent=me.won.toLocaleString('ru');$('#stB').textContent=me.best.toLocaleString('ru')}
 function updBal(quiet){$('#balN').textContent=me.coins.toLocaleString('ru');if(!quiet){const b=$('#bal');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}stats()}
@@ -451,6 +464,7 @@ function renderFriends(){
   if(!friends.length)empty(fl,'Пока никого. Введи ник сверху или добавь игрока из списка «Игроки в системе»');
   friends.forEach((a,i)=>fl.appendChild(friendRow(a,i,[
     btnEl('🎁','ib','Подарить '+GIFT+' монет',()=>gift(a.id)),
+    btnEl('🔁','ib','Трейд: передать монеты или питомца',()=>tradeWith(a.id)),
     btnEl('✖','ib dng','Убрать из друзей',()=>unfriend(a.id))])));
   const others=Object.values(accounts).filter(a=>a.id!==me.id&&!me.friends.includes(a.id)&&(!q||keyName(a.name).includes(q)))
     .sort((a,b)=>isOnline(b)-isOnline(a)||b.seen-a.seen).slice(0,30);
@@ -476,6 +490,28 @@ function gift(id){
   const name=tx(acc=>{const o=acc[id];if(!o)return null;me.coins-=GIFT;o.coins+=GIFT;return o.name});
   if(!name)return toast('Игрок пропал из системы');
   updBal();renderFriends();toast(`🎁 ${name} получил ${GIFT} монет`);
+}
+function tradeWith(id){
+  sync();const friend=accounts[id];if(!friend||!me.friends.includes(id))return toast('Трейд доступен только друзьям');
+  const choice=prompt(`Трейд с ${friend.name}\nВведите: coins — передать монеты, pet — передать купленного питомца.\nПередача питомца необратима: получатель не сможет передать его кому-либо ещё, включая вас.`);
+  if(!choice)return;const type=choice.trim().toLowerCase();
+  if(type==='coins'){
+    const amount=Math.floor(Number(prompt('Сколько монет передать?')));
+    if(!Number.isFinite(amount)||amount<1)return toast('Укажи положительное число монет');
+    if(!confirm(`Подтверждение трейда\nПередать ${amount.toLocaleString('ru')} монет игроку ${friend.name}?\nПосле подтверждения перевод нельзя отменить.`))return;
+    const result=tx(acc=>{const o=acc[id];if(!o||!me.friends.includes(id))return 'friend';if(me.coins<amount)return 'funds';me.coins-=amount;o.coins=(+o.coins||0)+amount;return 'ok'});
+    if(result==='funds')return toast('Не хватает монет');if(result!=='ok')return toast('Друг недоступен');save();updBal();renderFriends();toast(`🪙 Передано ${amount.toLocaleString('ru')} монет игроку ${friend.name}`);return;
+  }
+  if(type==='pet'){
+    const transferable=PETS.filter(p=>p.price>=100000&&(me.petOwned||[]).includes(p.id)&&!me.petNoTrade[p.id]);
+    if(!transferable.length)return toast('Нет купленных питомцев, доступных для передачи');
+    const listing=transferable.map((p,i)=>`${i+1}. ${p.name} — ${p.price.toLocaleString('ru')} монет`).join('\n');
+    const n=Number(prompt('Какого питомца передать? Введи номер:\n'+listing));const p=transferable[n-1];if(!p)return toast('Питомец не выбран');
+    if(!confirm(`⚠️ НЕОБРАТИМЫЙ ТРЕЙД\n\nПередать «${p.name}» игроку ${friend.name}?\n\n• Питомец исчезнет из твоей коллекции.\n• Получатель сможет пользоваться им, но НЕ сможет передать его дальше или вернуть тебе.\n• Отменить передачу нельзя.\n\nПродолжить?`))return;
+    const result=tx(acc=>{const o=acc[id];if(!o||!me.friends.includes(id))return 'friend';if(!(me.petOwned||[]).includes(p.id)||me.petNoTrade[p.id])return 'pet';me.petOwned=me.petOwned.filter(x=>x!==p.id);if(me.petId===p.id)me.petId='';if(me.petTagId===p.id)me.petTagId='';o.petOwned=Array.isArray(o.petOwned)?o.petOwned:[];if(!o.petOwned.includes(p.id))o.petOwned.push(p.id);o.petNoTrade=o.petNoTrade||{};o.petNoTrade[p.id]=true;o.petReceivedFrom=o.petReceivedFrom||{};o.petReceivedFrom[p.id]=me.id;return 'ok'});
+    if(result==='pet')return toast('Питомец больше не доступен для передачи');if(result!=='ok')return toast('Друг недоступен');save();render();renderFriends();toast(`🐾 «${p.name}» передан игроку ${friend.name}`);return;
+  }
+  toast('Выбери coins или pet');
 }
 $('#frForm').onsubmit=e=>{
   e.preventDefault();const v=normName($('#frIn').value);if(!v)return;
@@ -551,7 +587,7 @@ function renderDonate(){
     c.onclick=async()=>{try{await navigator.clipboard.writeText(r.value);toast('Скопировано: '+r.label)}catch{toast('Не удалось скопировать — выдели и скопируй вручную')}};
     d.append(t,c);g.appendChild(d);
   });
-  if(!links.length&&!reqs.length)h.textContent=me&&me.creator?'Способы поддержки не добавлены. Открой script.js и заполни константу DONATE (ссылки и реквизиты) — этот блок увидят все игроки.':'Способы поддержки скоро появятся здесь 💜';
+  if(!links.length&&!reqs.length)h.textContent='Способы поддержки скоро появятся здесь 💜';
   const T=+DONATE.goalTarget||0;
   if(T>0){
     const cur=Math.max(0,+DONATE.goalCurrent||0),p=Math.min(100,Math.round(cur/T*100)),u=DONATE.goalUnit||'';
@@ -704,7 +740,7 @@ async function go(id,ev){
   const to=$('#v-'+id);
   await transition(()=>{
     $('#v-'+curView).classList.remove('active','pop');to.classList.add('active');to.scrollTop=0;curView=id;
-    if(id==='friends')renderFriends();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();
+    if(id==='friends')renderFriends();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='admin'){if(!me.owner){toast('Нет доступа');navBusy=false;return}renderAdmin()}
   },()=>popIn(to),ev);
   navBusy=false;
 }
@@ -714,6 +750,62 @@ $$('.gcard').forEach(c=>{
   c.onmousemove=e=>{const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform=`rotateY(${x*22}deg) rotateX(${-y*22}deg) scale(1.04)`};
   c.onmouseleave=()=>c.style.transform='';
 });
+
+
+/* ---------- NEON PET CLUB ---------- */
+const PETS=[
+{id:'cat',name:'Котик любви',emoji:'🐱',price:0,rarity:'СТАРТОВЫЙ',desc:'Ласковый талисман с сердечками.',free:true},
+{id:'bunny',name:'Зайка облачко',emoji:'🐰',price:0,rarity:'СТАРТОВЫЙ',desc:'Прыгучий друг с удачей.',free:true},
+{id:'bear',name:'Мишка-мёдик',emoji:'🐻',price:0,rarity:'СТАРТОВЫЙ',desc:'Добрый защитник коллекции.',free:true},
+{id:'fox',name:'Неоновый лис',emoji:'🦊',price:100000,rarity:'НЕОНОВЫЙ',desc:'Хитрый и быстрый компаньон.'},
+{id:'panda',name:'Панда матча',emoji:'🐼',price:250000,rarity:'НЕОНОВЫЙ',desc:'Спокойствие превращает тапы в силу.'},
+{id:'frog',name:'Мятный жабик',emoji:'🐸',price:400000,rarity:'НЕОНОВЫЙ',desc:'Редкий прыгун из мятного сада.'},
+{id:'hamster',name:'Хомяк-бублик',emoji:'🐹',price:650000,rarity:'НЕОНОВЫЙ',desc:'Запасает энергию на будущее.'},
+{id:'koala',name:'Коала мечты',emoji:'🐨',price:900000,rarity:'НЕОНОВЫЙ',desc:'Сонный, но невероятно милый.'},
+{id:'unicorn',name:'Пудровый единорог',emoji:'🦄',price:1500000,rarity:'ЭПИЧЕСКИЙ',desc:'Оставляет за собой искры магии.'},
+{id:'dragon',name:'Дракончик плазмы',emoji:'🐲',price:3000000,rarity:'ЭПИЧЕСКИЙ',desc:'Маленькое сердце большой силы.'},
+{id:'alien',name:'Космо-пришелец',emoji:'👽',price:5000000,rarity:'ЭПИЧЕСКИЙ',desc:'Прибыл с далёкой тап-планеты.'},
+{id:'octopus',name:'Осьминог диско',emoji:'🐙',price:8000000,rarity:'ЭПИЧЕСКИЙ',desc:'Восемь лап — восемь поводов тапнуть.'},
+{id:'tiger',name:'Тигр-неон',emoji:'🐯',price:12000000,rarity:'ЛЕГЕНДАРНЫЙ',desc:'Полосатая энергия и золотой взгляд.'},
+{id:'phoenix',name:'Феникс искр',emoji:'🐦‍🔥',price:50000000,rarity:'ЛЕГЕНДАРНЫЙ',desc:'Возрождается ярче после каждой эволюции.'},
+{id:'star',name:'Звёздный кот',emoji:'🌟',price:500000000,rarity:'МИФИЧЕСКИЙ',desc:'Собрал созвездия в пушистую форму.'},
+{id:'cosmic',name:'Космический хранитель',emoji:'🐉',price:1000000000,rarity:'АРХОНТ',desc:'Легенда NEON PET CLUB — почти невозможная находка.'}
+];
+const PET_PALETTE={cat:['#fff8f2','#f59e0b'],bunny:['#f5efff','#c4b5fd'],bear:['#c99164','#8b5e3c'],fox:['#fb923c','#9a3412'],panda:['#f8fafc','#171717'],frog:['#86efac','#15803d'],hamster:['#d6a77a','#9a6a43'],koala:['#cbd5e1','#64748b'],unicorn:['#f5d0fe','#c084fc'],dragon:['#86efac','#047857'],alien:['#67e8f9','#0891b2'],octopus:['#f0abfc','#a21caf'],tiger:['#fdba74','#c2410c'],phoenix:['#fca5a5','#ea580c'],star:['#fde68a','#a16207'],cosmic:['#c4b5fd','#6d28d9']};
+function petArtSrc(id){const webArt={bunny:'pet-images/bunny.jpg',bear:'pet-images/bear.webp',fox:'pet-images/fox.jfif',panda:'pet-images/panda.png',frog:'pet-images/frog.jpg',hamster:'pet-images/hamster.jfif',koala:'pet-images/koala.jfif',unicorn:'pet-images/unicorn.jfif',dragon:'pet-images/dragon.png'};if(id==='cat')return 'cat-sticker.webp';if(webArt[id])return webArt[id];const c=PET_PALETTE[id]||['#e9d5ff','#8b5cf6'];const ears=id==='bunny'?'<ellipse cx="39" cy="24" rx="10" ry="25"/><ellipse cx="81" cy="24" rx="10" ry="25"/>':id==='bear'||id==='panda'||id==='koala'?'<circle cx="35" cy="43" r="16"/><circle cx="85" cy="43" r="16"/>':'<path d="M27 49 L24 20 L49 37 Z"/><path d="M73 37 L98 20 L95 49 Z"/>';
+const marks=id==='fox'||id==='tiger'?'<path d="M31 48 L44 61 L36 70 M89 48 L76 61 L84 70" stroke="'+c[1]+'" stroke-width="5" fill="none"/>':id==='panda'?'<ellipse cx="39" cy="61" rx="12" ry="15" fill="#171717"/><ellipse cx="81" cy="61" rx="12" ry="15" fill="#171717"/>':'';
+const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 130"><defs><linearGradient id="f" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${c[0]}"/><stop offset="1" stop-color="${c[1]}"/></linearGradient><filter id="g"><feGaussianBlur stdDeviation="3"/></filter></defs><ellipse cx="60" cy="117" rx="34" ry="7" fill="${c[1]}" opacity=".3" filter="url(#g)"/>${ears.replaceAll('<ellipse','<ellipse fill="url(#f)"').replaceAll('<circle','<circle fill="url(#f)"').replaceAll('<path','<path fill="url(#f)"')}<path d="M25 57 Q22 36 43 34 Q60 22 77 34 Q98 36 95 57 L91 91 Q83 111 60 111 Q37 111 29 91Z" fill="url(#f)" stroke="${c[1]}" stroke-width="2.5"/>${marks}<ellipse cx="45" cy="68" rx="5" ry="7" fill="#24152f"/><ellipse cx="75" cy="68" rx="5" ry="7" fill="#24152f"/><circle cx="46" cy="66" r="2" fill="white"/><circle cx="76" cy="66" r="2" fill="white"/><ellipse cx="60" cy="81" rx="10" ry="7" fill="#fff7ed" opacity=".9"/><path d="M57 79 Q60 83 63 79 M60 84 Q56 90 52 86 M60 84 Q64 90 68 86" stroke="#8b4560" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="36" cy="81" r="5" fill="#fb7185" opacity=".5"/><circle cx="84" cy="81" r="5" fill="#fb7185" opacity=".5"/></svg>`;return 'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg)}
+const CUSTOM_BG={default:'radial-gradient(circle at 50% 25%,#51306f,#151126 70%)',moon:'radial-gradient(circle at 70% 18%,#9ca3ff55,transparent 24%),linear-gradient(145deg,#101b43,#19102c)',sakura:'radial-gradient(circle at 25% 20%,#fb718655,transparent 28%),linear-gradient(145deg,#4a163f,#21112e)',arcade:'linear-gradient(135deg,#150b3b,#062d46,#36104b)',forest:'radial-gradient(circle at 70% 25%,#34d39955,transparent 30%),linear-gradient(145deg,#103a37,#13241f)',sunset:'radial-gradient(circle at 50% 20%,#fb923c66,transparent 35%),linear-gradient(145deg,#3b164d,#21102e)'};
+const TOP_DECO={none:'',crown:'♛',halo:'◯',stars:'✦ ✧ ✦',hearts:'♡ ♥ ♡',bubbles:'○ ◦ ○'};const BOTTOM_DECO={none:'',ribbon:'〰 ♡ 〰',crystals:'◆ ◇ ◆',flowers:'✿ ❀ ✿',sparkles:'✧ ✦ ✧',pawprint:'● ᵔᴥᵔ ●'};
+function renderPetCustom(){if(!me)return;const c=me.petCustom||(me.petCustom={bg:'default',top:'stars',bottom:'hearts',effect:'glow',site:'default'});const p=pet();$('#customPetImg').src=petArtSrc(p?p.id:'cat');$('#customPetImg').alt=p?p.name:'Твой питомец';$('#customPetLabel').textContent=p?p.name:'Выбери питомца';$('#petCustomPreview').style.background=CUSTOM_BG[c.bg]||CUSTOM_BG.default;$('#customTopDeco').textContent=TOP_DECO[c.top]||'';$('#customBottomDeco').textContent=BOTTOM_DECO[c.bottom]||'';$('#customPetImg').style.filter=c.effect==='rainbow'?'hue-rotate(90deg) drop-shadow(0 0 22px #67e8f9)':c.effect==='shadow'?'drop-shadow(0 12px 24px #000)':c.effect==='glow'?'drop-shadow(0 0 22px #f0abfc)':'';['petBgSelect','petTopSelect','petBottomSelect','petEffectSelect','siteThemeSelect'].forEach((id,i)=>{$('#'+id).value=[c.bg,c.top,c.bottom,c.effect,c.site][i]});applySiteTheme(c.site)}
+function applySiteTheme(theme){const themes={default:['#c084fc','#100b1c'],ocean:['#38bdf8','#071827'],rose:['#fb7185','#241020'],emerald:['#34d399','#071d19'],gold:['#fbbf24','#201606']};const t=themes[theme]||themes.default;document.documentElement.style.setProperty('--accent',t[0]);document.documentElement.style.setProperty('--bg',t[1]);document.body.dataset.siteTheme=theme||'default'}
+function savePetCustom(){me.petCustom={bg:$('#petBgSelect').value,top:$('#petTopSelect').value,bottom:$('#petBottomSelect').value,effect:$('#petEffectSelect').value,site:$('#siteThemeSelect').value};save();renderPetCustom();toast('Персонализация сохранена!')}
+['petBgSelect','petTopSelect','petBottomSelect','petEffectSelect','siteThemeSelect'].forEach(id=>$('#'+id).addEventListener('change',()=>{const c={bg:$('#petBgSelect').value,top:$('#petTopSelect').value,bottom:$('#petBottomSelect').value,effect:$('#petEffectSelect').value,site:$('#siteThemeSelect').value};me.petCustom=c;renderPetCustom()}));$('#savePetCustom').onclick=savePetCustom;
+const tapRanks=['Милый новичок','Пушистик','Любимчик','Сердечный маг','Звёздный питомец','Легенда любви','Космический хранитель'];
+function pet(){return PETS.find(p=>p.id===me.petId)||null}
+function tapRank(){return tapRanks[Math.min(tapRanks.length-1,Math.floor((me.tapLevel-1)/3))]}
+function petCard(p,starter=false){const owned=me.petId===p.id,unlocked=p.free||(me.petOwned||[]).includes(p.id);return `<article class="pet-card ${owned?'is-active':''} rarity-${p.rarity.toLowerCase().replace(/[^а-яёa-z]/g,'')}"><img class="pet-card-art" src="${petArtSrc(p.id)}" alt="${p.name}"><div class="pet-card-name">${p.name}</div><span class="pet-rarity">${p.rarity}</span><p>${p.desc}</p><button class="btn ${owned?'ghost':p.free?'':'gold'}" data-pet="${p.id}" type="button">${owned?'Активен':unlocked?'Выбрать':me.coins>=p.price?'Купить · '+p.price.toLocaleString('ru')+' 🪙':'🔒 '+p.price.toLocaleString('ru')+' 🪙'}</button></article>`}
+function renderPetCatalog(){if(!me)return;if(me.petId&&!PETS.some(p=>p.id===me.petId)){me.petId='';me.petRank=0;save()}me.petOwned=(me.petOwned||[]).filter(id=>PETS.some(p=>p.id===id));const picker=$('#petPicker');if(!me.petId)picker.hidden=false;$('#starterPets').innerHTML=PETS.filter(p=>p.free).map(p=>petCard(p,true)).join('');$('#petCatalog').innerHTML=PETS.map(p=>petCard(p)).join('');const p=pet();$('#petCurrentArt').innerHTML=p?`<img src="${petArtSrc(p.id)}" alt="${p.name}">`:`<span>Выбери</span>`;$('#petName').textContent=p?p.name:'Выбери питомца';$('#petRarity').textContent=p?p.rarity:'НЕТ ПИТОМЦА';$('#petDescription').textContent=p?p.desc:'Начни с одного из трёх бесплатных друзей.';$('#petOwnedInfo').textContent=p?`Ранг эволюции ${me.petRank||0} · активный питомец`:'Коллекция ждёт первого питомца';$('#petSticker').src=petArtSrc(p?p.id:'cat');$('#petSticker').hidden=false;$('#petEmojiTap').hidden=true;$('#petCurrentArt').hidden=false;renderPetCustom();$('#petTap').setAttribute('aria-label',p?'Тапнуть по '+p.name:'Сначала выбери питомца');const stake=p&&p.price>=100000&&(me.petOwned||[]).includes(p.id);$('#evoChance').textContent='Шанс успеха: 30%';$('#evoCost').textContent=stake?'Ставка: '+p.name:'Нужен купленный питомец от 100 000 🪙';$('#evoRoll').disabled=!stake;}
+function renderTapper(){if(!me)return;const now=Date.now(),elapsed=Math.min(3600,Math.max(0,(now-(me.tapLast||now))/1000));if(elapsed>0&&me.tapIdle)me.tapCurrency+=Math.floor(elapsed*me.tapIdle);me.tapLast=now;save();
+ const xpNeed=me.tapLevel*100,powerCost=50*(me.tapPowerLv+1)**2,idleCost=100*(me.tapIdleLv+1)**2,levelCost=250*me.tapLevel;
+ $('#tapLevel').textContent=me.tapLevel;$('#tapRank').textContent=tapRank();$('#tapCurrency').textContent=me.tapCurrency.toLocaleString('ru')+' 💗';$('#tapPower').textContent='+'+me.tapPower;$('#tapIdle').textContent=me.tapIdle.toLocaleString('ru');$('#tapXpText').textContent=(me.tapXp%xpNeed).toLocaleString('ru')+' / '+xpNeed.toLocaleString('ru');$('#tapXpBar').style.width=Math.min(100,(me.tapXp%xpNeed)/xpNeed*100)+'%';$('#petSticker').src=petArtSrc(me.petId||'cat');$('#petSticker').style.filter=me.tapLevel>=20?'hue-rotate(115deg) saturate(1.7) drop-shadow(0 15px 28px #22d3ee88)':me.tapLevel>=12?'hue-rotate(55deg) saturate(1.5) drop-shadow(0 15px 28px #fbbf2488)':me.tapLevel>=7?'hue-rotate(-25deg) saturate(1.4) drop-shadow(0 15px 28px #c084fc88)':me.tapLevel>=4?'saturate(1.25) drop-shadow(0 15px 28px #fb718688)':'drop-shadow(0 15px 25px #f472b655)';$('#convertInfo').textContent='Доступно: '+me.tapCurrency.toLocaleString('ru')+' 💗';$('#powerCost').textContent='Цена: '+powerCost.toLocaleString('ru')+' 💗';$('#idleCost').textContent='Цена: '+idleCost.toLocaleString('ru')+' 💗';$('#levelCost').textContent='Цена: '+levelCost.toLocaleString('ru')+' 💗';
+ $('#upgradePower').disabled=me.tapCurrency<powerCost;$('#upgradeIdle').disabled=me.tapCurrency<idleCost;$('#upgradeLevel').disabled=me.tapCurrency<levelCost;$('#convertCurrency').disabled=me.tapCurrency<10000;renderPetCatalog();}
+function choosePet(id){const p=PETS.find(x=>x.id===id);if(!p)return;const unlocked=p.free||(me.petOwned||[]).includes(id);if(!unlocked&&me.coins<p.price)return toast('Не хватает обычных монет для покупки питомца');if(!unlocked){me.coins-=p.price;me.petOwned.push(id)}if(p.free&&!me.petOwned.includes(id))me.petOwned.push(id);me.petId=id;save();updBal(true);renderTapper();toast(p.free?'Новый друг выбран!':'Питомец куплен и экипирован!')}
+$('#openPetPicker').onclick=()=>{$('#petPicker').hidden=!$('#petPicker').hidden;$('#petPicker').scrollIntoView({behavior:'smooth',block:'nearest'})};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-pet]');if(b&&me)choosePet(b.dataset.pet)});
+function tapPet(){if(!me.petId){$('#petPicker').hidden=false;return toast('Сначала выбери бесплатного питомца 🐾')}me.tapCurrency+=me.tapPower;me.tapXp+=1;while(me.tapXp>=me.tapLevel*100){me.tapXp-=me.tapLevel*100;me.tapLevel++;toast('✨ Новый уровень питомца: '+me.tapLevel+'!')}const f=$('#tapFloat');f.textContent='+'+me.tapPower+' 💗';f.classList.remove('pop');void f.offsetWidth;f.classList.add('pop');$('#petTap').classList.remove('bop');void $('#petTap').offsetWidth;$('#petTap').classList.add('bop');save();renderTapper()}
+$('#petTap').addEventListener('click',tapPet);
+$('#upgradePower').onclick=()=>{const c=50*(me.tapPowerLv+1)**2;if(me.tapCurrency<c)return;me.tapCurrency-=c;me.tapPowerLv++;me.tapPower+=1+Math.floor(me.tapLevel/5);save();renderTapper();toast('⚡ Сила тапа улучшена!')};
+$('#upgradeIdle').onclick=()=>{const c=100*(me.tapIdleLv+1)**2;if(me.tapCurrency<c)return;me.tapCurrency-=c;me.tapIdleLv++;me.tapIdle+=1;save();renderTapper();toast('✨ Авто-обнимашки улучшены!')};
+$('#upgradeLevel').onclick=()=>{const c=250*me.tapLevel;if(me.tapCurrency<c)return;me.tapCurrency-=c;me.tapLevel++;me.tapXp=0;save();renderTapper();toast('🌟 Питомец эволюционировал!')};
+$('#convertCurrency').onclick=()=>{const bundles=Math.floor(me.tapCurrency/10000);if(!bundles)return toast('Нужно минимум 10 000 💗');const hearts=bundles*10000,coins=bundles*100;me.tapCurrency-=hearts;me.coins+=coins;save();updBal();renderTapper();toast('Обмен: '+hearts.toLocaleString('ru')+' 💗 → '+coins.toLocaleString('ru')+' 🪙')};
+$('#evoRoll').onclick=()=>{const p=pet();if(!p||p.price<100000||!(me.petOwned||[]).includes(p.id))return toast('Для испытания нужен активный купленный питомец от 100 000 монет');const chance=30;if(!confirm(`⚠️ Разлом эволюции\n\nСтавка: ${p.name}\nШанс успеха: ${chance}%\n\nПри проигрыше питомец будет удалён из коллекции, а прогресс тапалки сброшен. После этого ты выберешь бесплатного питомца. Продолжить?`))return;if(Math.random()*100<chance){me.petRank++;me.tapPower+=Math.max(1,me.petRank);me.tapLevel++;save();renderTapper();toast('🌈 Успех! «'+p.name+'» эволюционировал до ранга '+me.petRank+'!')}else{me.petOwned=me.petOwned.filter(id=>id!==p.id);if(me.petTagId===p.id)me.petTagId='';me.petId='';me.petRank=0;me.tapCurrency=0;me.tapLevel=1;me.tapPower=1;me.tapPowerLv=0;me.tapIdle=0;me.tapIdleLv=0;me.tapXp=0;me.tapLast=Date.now();save();renderTapper();$('#petPicker').hidden=false;$('#petPicker').scrollIntoView({behavior:'smooth',block:'start'});toast('💥 Разлом поглотил питомца! Прогресс обнулён — выбери нового бесплатного друга.')}};
+setInterval(()=>{if(me&&me.tapIdle>0){me.tapCurrency+=me.tapIdle;me.tapLast=Date.now();save();if(curView==='tap')renderTapper()}},1000);
+
+/* ---------- Панель владельца (локальная версия) ---------- */
+function renderAdmin(){if(!me||!me.owner){$('#adminNav').hidden=true;return}$('#adminNav').hidden=false;const all=Object.values(sync());$('#adminUsers').textContent=all.length;$('#adminCoins').textContent=all.reduce((n,a)=>n+(+a.coins||0),0).toLocaleString('ru');$('#adminHearts').textContent=all.reduce((n,a)=>n+(+a.tapCurrency||0),0).toLocaleString('ru');const sel=$('#adminUser'),old=sel.value;sel.innerHTML='';all.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+' ('+a.coins+' 🪙)';sel.appendChild(o)});if(old)sel.value=old}
+$('#adminGrantBtn').onclick=()=>{if(!me||!me.owner)return toast('Нет доступа');const id=$('#adminUser').value,n=Math.floor(+$('#adminGrant').value);if(!id||!(n>0))return toast('Выбери аккаунт и укажи сумму');const all=sync(),a=all[id];if(!a)return toast('Аккаунт не найден');a.coins=(+a.coins||0)+n;LS.set('nv_acc',all);accounts=all;if(id===me.id){me=a;updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru')+' 🪙')};
+$('#ownerDeactivate').onclick=()=>{if(!me||!me.owner)return;me.owner=false;me.creator=false;me.tags=me.tags.filter(id=>TAG_BY[id]&&TAG_BY[id].g!=='creator');save();$('#adminNav').hidden=true;go('lobby');render();toast('Статус владельца снят')};
 
 /* ---------- Общее для игр ---------- */
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}

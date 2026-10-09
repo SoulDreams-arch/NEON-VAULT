@@ -67,7 +67,7 @@
   <div id="stage">
     <header class="card">
       <div class="logo">NEON VAULT</div>
-      <div class="bal" id="bal">🪙 <span id="balN">0</span></div>
+      <div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">¢</span><span id="balN">0</span></div>
       <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b></div>
     </header>
 
@@ -87,6 +87,7 @@
           <p class="st-note">Заходи каждый день: 1-й день +100 монет, 2-й +200, 3-й +300 и так до 100-го дня (+10 000). Пропустил день — серия начнётся заново.</p>
         </div>
         <div class="games">
+          <div class="card gcard tapper-card" data-go="tap"><span class="ic">💗</span><h3>Котик-тапалка</h3><p>Кликай, прокачивай и открывай новые облики</p></div>
           <div class="card gcard" data-go="slots"><span class="ic">🎰</span><h3>Слоты</h3><p>Нажми и крути барабаны</p></div>
           <div class="card gcard" data-go="wheel"><span class="ic">🎡</span><h3>Колесо</h3><p>Раскрути и жди удачу</p></div>
           <div class="card gcard" data-go="coin"><span class="ic">🪙</span><h3>Монетка</h3><p>Орёл или решка</p></div>
@@ -114,6 +115,38 @@
           </div>
         </div>
         <p class="disc">⚠️ Игровая валюта не имеет реальной стоимости и не выводится. Пожертвования автору — отдельно и в реальных деньгах, на игровой баланс они не влияют.</p>
+      </section>
+
+      <!-- ТАПАЛКА -->
+      <section class="view" id="v-tap">
+        <div class="card tap-hero">
+          <div class="tap-top"><div><span class="eyebrow">NEON PET • CLICKER</span><h1 class="orb">Котик любви</h1><p class="sub">Тапай по стикеру, собирай сердечки и прокачивай его уровень.</p></div><div class="tap-level"><small>УРОВЕНЬ</small><b id="tapLevel">1</b><span id="tapRank">Милый новичок</span></div></div>
+          <button class="pet-button" id="petTap" type="button" aria-label="Тапнуть по котику"><span class="pet-aura"></span><img id="petSticker" src="cat-sticker.webp" alt="Котик с сердечками"><span id="petEmojiTap" class="pet-emoji-tap" hidden>🐱</span><span class="tap-float" id="tapFloat">+1 💗</span></button>
+          <div class="tap-progress"><div><span>Опыт до следующего уровня</span><b id="tapXpText">0 / 100</b></div><div class="xp-track"><i id="tapXpBar"></i></div></div>
+          <div class="tap-stats"><div><small>Сердечки</small><b id="tapCurrency">0 💗</b></div><div><small>За тап</small><b id="tapPower">+1</b></div><div><small>Доход / сек.</small><b id="tapIdle">0</b></div></div>
+        </div>
+        <div class="tap-upgrades">
+          <div class="card panel"><h3>⚡ Сила любви</h3><p>Каждый тап приносит больше сердечек.</p><div class="upgrade-foot"><span id="powerCost">Цена: 50 💗</span><button class="btn" id="upgradePower">Улучшить</button></div></div>
+          <div class="card panel"><h3>✨ Авто-обнимашки</h3><p>Котик сам собирает сердечки каждую секунду.</p><div class="upgrade-foot"><span id="idleCost">Цена: 100 💗</span><button class="btn" id="upgradeIdle">Улучшить</button></div></div>
+          <div class="card panel"><h3>🌟 Эволюция котика</h3><p>Повышай уровень, чтобы стикер менялся и открывались новые формы.</p><div class="upgrade-foot"><span id="levelCost">Цена: 250 💗</span><button class="btn gold" id="upgradeLevel">Повысить уровень</button></div></div>
+          <div class="card panel"><h3>🔄 Обмен валюты</h3><p>Сердечки можно обменять на обычные монеты. Курс фиксированный: <b>10 000 💗 = 100 🪙</b>.</p><div class="upgrade-foot"><span id="convertInfo">Доступно: 0 💗</span><button class="btn ghost" id="convertCurrency">Обменять максимум</button></div></div>
+        </div>
+        <div class="pet-zone card panel">
+          <div class="pet-zone-head"><div><span class="eyebrow">NEON PET CLUB</span><h2>🐾 Твоя коллекция</h2><p class="sub">Выбирай питомца, открывай редкие формы и береги любимца в испытании эволюции.</p></div><button class="btn ghost" id="openPetPicker" type="button">Выбрать питомца</button></div>
+          <div id="petPicker" class="pet-picker" hidden><h3>С кем начнём?</h3><p>Выбери одного бесплатного питомца — котика, зайца или мишку.</p><div id="starterPets" class="pet-catalog"></div></div>
+          <div class="pet-current"><div class="pet-current-art" id="petCurrentArt">🐱</div><div class="pet-current-info"><span class="pet-rarity" id="petRarity">СТАРТОВЫЙ</span><h3 id="petName">Котик</h3><p id="petDescription">Твой первый пушистый друг.</p><small id="petOwnedInfo">Питомец активен</small></div></div>
+          <div class="evo-panel"><div><span class="eyebrow">РИСКОВОЕ ИСПЫТАНИЕ</span><h3>🎲 Разлом эволюции</h3><p>Ставка — любой купленный питомец от 100 000 монет. При успехе он эволюционирует; при проигрыше питомец сгорает, прогресс тапалки сбрасывается, и ты выбираешь нового бесплатного.</p><div class="evo-meta"><span id="evoChance">Шанс успеха: 70%</span><span id="evoCost">Ставка: 500 💗</span></div></div><button class="btn gold" id="evoRoll" type="button">Испытать удачу</button></div>
+          <div class="pet-zone-head catalog-head"><div><h3>💎 Каталог форм</h3><p class="sub">20 питомцев: 3 стартовых бесплатно, остальные покупаются за монеты.</p></div></div>
+          <div id="petCatalog" class="pet-catalog"></div>
+        </div>
+      </section>
+
+      <!-- ПАНЕЛЬ ВЛАДЕЛЬЦА -->
+      <section class="view" id="v-admin">
+        <div class="card panel admin-head"><span class="eyebrow">RESTRICTED ACCESS</span><h1 class="orb">👑 Панель владельца</h1><p class="sub">Инструменты управления NEON VAULT</p></div>
+        <div class="tap-upgrades"><div class="card panel"><h3>📊 Статистика</h3><div class="tap-stats"><div><small>Аккаунтов</small><b id="adminUsers">0</b></div><div><small>Монет у игроков</small><b id="adminCoins">0</b></div><div><small>Всего сердечек</small><b id="adminHearts">0</b></div></div></div>
+        <div class="card panel"><h3>🎁 Выдать монеты</h3><p>Начисление игровой валюты выбранному аккаунту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button></div>
+        <div class="card panel"><h3>🔐 Статус владельца</h3><p>Тег «Владелец» и панель видны только аккаунту с активированным ключом.</p><button class="btn ghost" id="ownerDeactivate" type="button">Снять статус владельца</button></div></div>
       </section>
 
       <!-- СЛОТЫ -->
@@ -206,6 +239,21 @@
             <div class="emo" id="emo"></div>
             <div class="row" style="margin-top:14px"><label class="btn ghost" style="cursor:pointer">📁 Загрузить своё<input type="file" id="avFile" accept="image/*" hidden></label></div>
           </div>
+          <div class="card panel pet-custom-panel" style="grid-column:1/-1">
+            <span class="eyebrow">NEON PET STUDIO</span><h3>🐾 Персонализация питомца и сайта</h3>
+            <p class="sub">Выбери настроение питомца, фон тапалки и украшения. Настройки сохраняются в твоём профиле.</p>
+            <div class="custom-grid">
+              <div class="custom-preview" id="petCustomPreview"><span class="custom-top-deco" id="customTopDeco">✦ ✧ ✦</span><img id="customPetImg" alt="Твой питомец"><span class="custom-bottom-deco" id="customBottomDeco">♡ · ✦ · ♡</span><b id="customPetLabel">Твой питомец</b></div>
+              <div class="custom-controls">
+                <label class="lbl" for="petBgSelect">Фон питомца</label><select class="inp" id="petBgSelect"><option value="default">По умолчанию</option><option value="moon">Лунная ночь</option><option value="sakura">Сакура</option><option value="arcade">Неон-аркада</option><option value="forest">Мятный лес</option><option value="sunset">Космический закат</option></select>
+                <label class="lbl" for="petTopSelect">Верхнее украшение</label><select class="inp" id="petTopSelect"><option value="none">Без украшения</option><option value="crown">Корона</option><option value="halo">Сияющий нимб</option><option value="stars">Звёзды</option><option value="hearts">Сердечки</option><option value="bubbles">Пузырьки</option></select>
+                <label class="lbl" for="petBottomSelect">Нижнее украшение</label><select class="inp" id="petBottomSelect"><option value="none">Без украшения</option><option value="ribbon">Лента</option><option value="crystals">Кристаллы</option><option value="flowers">Цветы</option><option value="sparkles">Искры</option><option value="pawprint">Лапки</option></select>
+                <label class="lbl" for="petEffectSelect">Эффект питомца</label><select class="inp" id="petEffectSelect"><option value="none">Без эффекта</option><option value="glow">Мягкое свечение</option><option value="rainbow">Радужный ореол</option><option value="shadow">Космическая тень</option></select>
+                <label class="lbl" for="siteThemeSelect">Стиль всего сайта</label><select class="inp" id="siteThemeSelect"><option value="default">По умолчанию</option><option value="ocean">Океанический</option><option value="rose">Розовая мечта</option><option value="emerald">Изумрудный</option><option value="gold">Золотой люкс</option></select>
+                <button class="btn gold full" id="savePetCustom" type="button">Сохранить персонализацию</button>
+              </div>
+            </div>
+          </div>
           <div class="card panel" style="grid-column:1/-1">
             <h3>🎨 Фон профиля</h3>
             <div class="swatches" id="sws"></div>
@@ -228,11 +276,13 @@
   <!-- ВКЛАДКИ СПРАВА -->
   <nav id="nav">
     <button class="nbtn on" data-view="lobby"><em>🏠</em>Лобби</button>
+    <button class="nbtn" data-view="tap"><em>💗</em>Тапалка</button>
     <button class="nbtn" data-view="slots"><em>🎰</em>Слоты</button>
     <button class="nbtn" data-view="wheel"><em>🎡</em>Колесо</button>
     <button class="nbtn" data-view="coin"><em>🪙</em>Монетка</button>
     <button class="nbtn" data-view="top"><em>🏆</em>Топ</button>
     <button class="nbtn" data-view="friends"><em>👥</em>Друзья</button>
+    <button class="nbtn" data-view="admin" id="adminNav" hidden><em>👑</em>Админ-панель</button>
     <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
   </nav>
 </div>
