@@ -485,3 +485,39 @@ button{touch-action:manipulation}
 img{max-width:100%}
 @media(max-width:760px){.view{padding-left:14px!important;padding-right:14px!important}.section-title h1{font-size:clamp(22px,6vw,34px)}.gcard{min-width:0}.idea-feed{grid-template-columns:minmax(0,1fr)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}body::before{animation:none}}
+
+
+/* NEON VAULT COMMUNITY / PREMIUM update */
+.global-announcement{position:sticky;top:0;z-index:1000;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 18px;background:linear-gradient(90deg,#5b21b6,#0e7490,#7c3aed);border-bottom:1px solid #a78bfa;color:#fff;box-shadow:0 8px 32px #03001480;text-align:center}
+.global-announcement[hidden]{display:none}.global-announcement small{opacity:.75;font-size:11px}
+.games-hub,.global-chat-card,.premium-hero,.premium-customize{padding:clamp(18px,3vw,30px);margin-bottom:18px}
+.games-hub-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+.games-hub-grid .gcard{color:inherit;text-align:left;cursor:pointer}
+.global-chat-messages{height:min(45vh,430px);min-height:220px;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:14px;background:#08091a9c;border:1px solid #302b58;border-radius:16px}
+.global-chat-msg{max-width:92%;padding:10px 13px;border:1px solid #37315f;background:#12132a;border-radius:13px;overflow-wrap:anywhere}
+.global-chat-msg .meta{display:flex;gap:8px;align-items:center;font-size:11px;color:#a5a3c4;margin-bottom:5px}
+.global-chat-msg .body{color:#f4f2ff;white-space:pre-wrap}
+.global-chat-msg.jackpot{border-color:#fbbf24;background:linear-gradient(120deg,#35234c,#172345)}
+.global-chat-compose{display:flex;gap:10px;margin-top:12px}.global-chat-compose .inp{flex:1;min-width:0;margin:0}
+.premium-hero{background:radial-gradient(ellipse at 80% 0,#a855f755,transparent 50%),linear-gradient(140deg,#14122e,#0b1730)}
+.premium-status{display:inline-flex;margin-top:12px;padding:9px 14px;border-radius:100px;border:1px solid #7c3aed;color:#e9d5ff;background:#7c3aed20}
+.premium-plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:18px}
+.premium-plan{padding:24px;border:1px solid #393263;background:linear-gradient(155deg,#17152f,#0e1126)}
+.premium-plan>span{font-size:11px;letter-spacing:.16em;color:#c4b5fd}.premium-plan h2{font-size:36px;margin:10px 0 0;color:#f5d0fe}
+.premium-plan ul{padding-left:20px;color:#c5c3dc;line-height:1.9;min-height:140px}.premium-featured{border-color:#a855f7;box-shadow:0 0 35px #7c3aed25}
+.premium-label{display:block;margin:14px 0 6px;color:#c4b5fd;font-size:13px}
+.slots-layout{display:grid;grid-template-columns:minmax(180px,240px) minmax(0,1fr);gap:16px;align-items:start;margin:20px 0}
+.slots-odds{border:1px solid #393263;border-radius:15px;background:#0c0e21;padding:15px;text-align:left}
+.slots-odds h3{margin:0 0 12px}.slots-odds p{margin:8px 0;color:#e5e2ff;font-size:13px}.slots-odds small{display:block;line-height:1.5;color:#a5a3c4;margin-top:14px}
+.slots-matrix{display:grid!important;grid-template-columns:repeat(12,minmax(18px,1fr));gap:4px;padding:8px;background:#090b1d;border:1px solid #393263;border-radius:14px;overflow:auto}
+.slot-cell{display:grid;place-items:center;aspect-ratio:1;min-width:18px;border-radius:6px;background:linear-gradient(145deg,#242044,#12142c);border:1px solid #39345e;font-size:clamp(10px,1.5vw,20px);transition:transform .16s,background .16s}
+.slot-cell.hit{background:#6d28d9;border-color:#e9d5ff;box-shadow:0 0 12px #a855f7;transform:scale(1.04)}
+.slot-pattern-hint{font-size:12px;color:#a5a3c4;margin-top:10px}
+.friend-requests-card{margin-top:18px;padding:18px}
+.presence-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;margin-right:5px}.presence-dot.busy{background:#f59e0b}.presence-dot.dnd{background:#f43f5e}.presence-dot.offline{background:#777}
+.role-tag{display:inline-flex;border:1px solid #7c3aed;border-radius:100px;padding:2px 7px;color:#d8b4fe;font-size:10px;margin-left:5px}
+.premium-tag{color:#f5d0fe;border-color:#c026d3}
+@media(max-width:760px){.games-hub-grid{grid-template-columns:1fr}.premium-plans{grid-template-columns:1fr}.slots-layout{grid-template-columns:1fr}.slots-matrix{gap:2px;padding:4px}.slot-cell{font-size:10px;min-width:14px}.global-chat-compose{flex-direction:column}.global-chat-compose .btn{width:100%}}
+
+.presence-select{max-width:145px;margin:0 0 0 8px;padding:7px 8px;border:1px solid #393263;border-radius:10px;background:#101126;color:#dcd8ff;font-size:11px}
+@media(max-width:600px){.presence-select{max-width:115px;font-size:10px}.mini{flex-wrap:wrap}}

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
@@ -68,7 +68,7 @@
     <header class="card">
       <div class="logo"><img src="cat-sticker.webp" alt="" class="header-cat"><span>NEON VAULT</span></div>
       <div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">¢</span><span id="balN">0</span></div>
-      <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b></div>
+      <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b><select id="presenceMode" aria-label="Статус" title="Статус" class="presence-select"><option value="online">● В сети</option><option value="busy">◐ Не беспокоить</option><option value="offline">○ Не в сети</option></select></div>
     </header>
 
     <div id="viewport">
@@ -195,22 +195,52 @@
         <div class="card panel admin-head"><span class="eyebrow">RESTRICTED ACCESS</span><h1 class="orb">👑 Панель владельца</h1><p class="sub">Инструменты управления NEON VAULT</p></div>
         <div class="tap-upgrades admin-dashboard-grid">
           <div class="card panel"><h3>📊 Статистика базы</h3><div class="tap-stats"><div><small>Аккаунтов</small><b id="adminUsers">0</b></div><div><small>Монет у игроков</small><b id="adminCoins">0</b></div><div><small>Всего сердечек</small><b id="adminHearts">0</b></div></div><p class="sub">Данные загружаются с сервера, а не из браузера владельца.</p></div>
-          <div class="card panel"><h3>🎁 Управление балансом</h3><p>Выбери аккаунт и выдай игровую валюту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button><input class="inp" id="adminGrantHearts" type="number" min="1" step="1" placeholder="Количество сердечек"><button class="btn full" id="adminGrantHeartsBtn" type="button">Начислить сердечки</button></div>
+          <div class="card panel"><h3>🎁 Управление балансом</h3><p>Выбери аккаунт и выдай игровую валюту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button><button class="btn ghost full" id="adminTakeCoinsBtn" type="button">Снять монеты</button><input class="inp" id="adminGrantHearts" type="number" min="1" step="1" placeholder="Количество сердечек"><button class="btn full" id="adminGrantHeartsBtn" type="button">Начислить сердечки</button><button class="btn ghost full" id="adminTakeHeartsBtn" type="button">Снять сердечки</button><button class="btn ghost full" id="adminDeleteUserBtn" type="button">Удалить аккаунт (владелец)</button></div>
           <div class="card panel"><h3>🛡️ Модерация аккаунтов</h3><p>Поиск по базе, блокировка/разблокировка и назначение роли модератора.</p><div class="row"><input class="inp" id="adminSearch" placeholder="Ник пользователя" style="flex:1;min-width:140px;margin:0"><button class="btn" id="adminSearchBtn" type="button">Найти</button></div><div class="admin-user-list" id="adminUserList"></div></div>
           <div class="card panel"><h3>🧾 Журнал действий</h3><p>История входов, изменений пароля, начислений и модерации.</p><button class="btn ghost" id="adminAuditBtn" type="button">Загрузить журнал</button><div class="admin-user-list" id="adminAudit"></div></div>
+          <div class="card panel"><h3>📢 Общее оповещение</h3><p>Покажется всем сверху на 1 минуту.</p><textarea class="inp" id="adminAnnouncement" maxlength="240" rows="2" placeholder="Текст оповещения"></textarea><button class="btn full" id="adminAnnouncementBtn" type="button">Опубликовать на 60 секунд</button></div>
+          <div class="card panel"><h3>✦ Premium и предупреждения</h3><p>Выбери игрока в списке выше.</p><input class="inp" id="adminPremiumDays" type="number" min="1" max="3650" value="30" placeholder="Дней Premium"><button class="btn full" id="adminPremiumGrant" type="button">Выдать Premium на срок</button><button class="btn ghost full" id="adminPremiumForever" type="button">Выдать навсегда</button><button class="btn ghost full" id="adminPremiumRevoke" type="button">Снять Premium</button><input class="inp" id="adminWarnReason" maxlength="300" placeholder="Причина предупреждения"><button class="btn ghost full" id="adminWarnBtn" type="button">Выдать предупреждение</button></div>
           <div class="card panel"><h3>🔐 Статус владельца</h3><p>Права проверяются сервером. Ключ владельца хранится только в переменных окружения сервера.</p><button class="btn ghost" id="ownerDeactivate" type="button">Снять статус владельца</button></div>
         </div>
+      </section>
+
+      <!-- ИГРЫ + ОБЩИЙ ЧАТ -->
+      <section class="view" id="v-games">
+        <div class="card games-hub">
+          <span class="eyebrow">NEON ARCADE • COMMUNITY</span><h1 class="orb">🎮 Игровой зал</h1>
+          <p class="sub">Три мини-игры и общий чат в одном спокойном пространстве. Ставка ограничена доступным балансом.</p>
+          <div class="games-hub-grid">
+            <button class="card gcard" data-go="slots"><span class="ic">🎰</span><h3>Слоты 6 × 12</h3><p>Собери горизонтальный узор из одинаковых символов.</p></button>
+            <button class="card gcard" data-go="wheel"><span class="ic">🎡</span><h3>Колесо</h3><p>Множители от ×0 до ×10.</p></button>
+            <button class="card gcard" data-go="coin"><span class="ic">🪙</span><h3>Монетка</h3><p>Угадай сторону и получи ×1,95.</p></button>
+          </div>
+        </div>
+        <div class="card global-chat-card">
+          <div class="section-title"><div><span class="eyebrow">LIVE LOUNGE</span><h2 class="orb">💬 Общий чат</h2><p class="sub">Общайся со всеми игроками; крупные выигрыши появляются здесь автоматически.</p></div><span class="pill-live">● СООБЩЕСТВО</span></div>
+          <div id="globalChatMessages" class="global-chat-messages" aria-live="polite"></div>
+          <form id="globalChatForm" class="global-chat-compose"><input id="globalChatInput" class="inp" maxlength="1000" placeholder="Сообщение всем игрокам…" required><button class="btn" type="submit">Отправить</button></form>
+        </div>
+      </section>
+
+      <!-- PREMIUM -->
+      <section class="view" id="v-premium">
+        <div class="card premium-hero"><span class="eyebrow">NEON VAULT • PREMIUM</span><h1 class="orb">✦ Персональное хранилище</h1><p class="sub">Больше индивидуальности, без влияния на честность игр.</p><div id="premiumStatus" class="premium-status">Проверяем статус подписки…</div></div>
+        <div class="premium-plans">
+          <div class="card premium-plan"><span>MONTHLY</span><h2>200 ₽</h2><p>1 месяц Premium</p><ul><li>Персональный баннер профиля</li><li>Оформление профиля</li><li>Питомец рядом с ником</li><li>Отдельная Premium-страница</li></ul><button class="btn full" type="button" id="premiumMonth">Выбрать на месяц</button></div>
+          <div class="card premium-plan premium-featured"><span>YEARLY · ВЫГОДНЕЕ</span><h2>1 500 ₽</h2><p>12 месяцев Premium</p><ul><li>Все возможности месячного плана</li><li>Один платёж на год</li><li>Особое оформление профиля</li></ul><button class="btn gold full" type="button" id="premiumYear">Выбрать на год</button></div>
+        </div>
+        <div class="card panel premium-customize"><h3>🎨 Моя персонализация</h3><p class="sub">Доступна только активным Premium-пользователям. Для оплаты нужно подключить платёжного провайдера; кнопки тарифов пока не списывают деньги и не выдают подписку.</p><label class="premium-label" for="premiumBanner">URL баннера (HTTPS)</label><input class="inp" id="premiumBanner" maxlength="500" placeholder="https://…"><label class="premium-label" for="premiumPet">Питомец около ника</label><select class="inp" id="premiumPet"><option value="">Без питомца</option></select><button class="btn" id="premiumSave" type="button">Сохранить персонализацию</button><div id="premiumHint" class="sub"></div></div>
       </section>
 
       <!-- СЛОТЫ -->
       <section class="view" id="v-slots">
         <div class="card gamebox">
           <h1 class="orb">🎰 Слоты</h1><p class="sub">Три одинаковых — джекпот, две — ставка возвращается</p>
-          <div class="slots"><div class="reel"><span>🍒</span></div><div class="reel"><span>🍋</span></div><div class="reel"><span>7️⃣</span></div></div>
+          <div class="slots-layout"><aside class="slots-odds"><h3>Шансы и выплаты</h3><p>🍒 35% · базовый ×2</p><p>🍋 25% · базовый ×3</p><p>🔔 18% · базовый ×5</p><p>⭐ 12% · базовый ×10</p><p>💎 7% · базовый ×25</p><p>7️⃣ 3% · базовый ×100</p><small>Любой символ может выиграть от 3 подряд. Чем длиннее узор (4–12), тем выше множитель. Шанс символа указан для каждой ячейки.</small></aside><div class="slots-play"><div class="slots slots-matrix" id="slotsMatrix" aria-label="Поле слотов 6 на 12"></div><div class="slot-pattern-hint">Найди любой горизонтальный узор из 3–12 одинаковых символов.</div></div></div>
           <div class="bets"></div>
           <button class="btn gold" id="spinS" style="font-size:18px;padding:15px 50px">КРУТИТЬ</button>
           <div class="res" id="resS"></div>
-          <div class="pay">🍒×5 · 🍋×8 · 🔔×10 · ⭐×15 · 💎×25 · 7️⃣×50</div>
+          <div class="pay">Максимальная ставка — до половины баланса от 10 000 монет.</div>
         </div>
       </section>
 
@@ -249,7 +279,7 @@
             </div>
           </section>
         </div>
-        <p class="chat-disclaimer">Примечание: эта сборка сохраняет чаты локально в браузере. Чтобы сообщения действительно доставлялись между устройствами и игроками онлайн, потребуется сервер и база данных.</p>
+        <p class="chat-disclaimer">Сообщения сохраняются на сервере и доступны участникам чата. Статус и роль показываются рядом с ником.</p>
       </section>
 
       <!-- ДРУЗЬЯ -->
@@ -259,6 +289,7 @@
           <p class="sub" style="margin-bottom:16px">Все, кто заходил в систему (даже гостем), запоминаются — найди игрока по нику и добавь</p>
           <form class="row" id="frForm" autocomplete="off"><input class="inp" id="frIn" maxlength="20" placeholder="Ник игрока" style="flex:1;min-width:180px;margin:0"><button class="btn" type="submit">➕ Добавить</button></form>
         </div>
+        <div class="card panel friend-requests-card"><h3>📨 Заявки в друзья</h3><div id="friendRequests" class="flist"></div></div>
         <div class="grid2" style="margin-top:18px">
           <div class="card panel"><h3>🤝 Мои друзья <span id="frCnt"></span></h3><div class="flist" id="frList"></div></div>
           <div class="card panel"><h3>🔎 Игроки в системе</h3><div class="flist" id="frSug"></div></div>
@@ -286,6 +317,7 @@
             <div class="av big" id="bigAv"></div>
             <div><div class="nick" id="bigNick"></div><div id="mail" style="font-size:13px;color:#a5a3c4"></div><div class="tgs" id="bigTags" style="margin-top:8px"></div></div>
           </div>
+          <div class="card panel my-warnings" id="myWarnings" hidden><h3>⚠️ Предупреждения аккаунта</h3><div id="myWarningsList"></div></div>
           <div class="stats">
             <div class="stat"><b id="stC">0</b><span>Монеты</span></div>
             <div class="stat"><b id="stG">0</b><span>Игр сыграно</span></div>
@@ -351,20 +383,19 @@
     <button class="nbtn on" data-view="lobby"><em>🏠</em>Лобби</button>
     <button class="nbtn" data-view="tap"><em>🐾</em>Тапалка</button>
     <button class="nbtn" data-view="evolution"><em>✧</em>Эволюция</button>
-    <button class="nbtn" data-view="slots"><em>🎰</em>Слоты</button>
-    <button class="nbtn" data-view="wheel"><em>🎡</em>Колесо</button>
-    <button class="nbtn" data-view="coin"><em>🪙</em>Монетка</button>
+    <button class="nbtn" data-view="games"><em>🎮</em>Игры и общий чат</button>
     <button class="nbtn" data-view="top"><em>🏆</em>Топ</button>
     <button class="nbtn" data-view="friends"><em>👥</em>Друзья</button>
     <button class="nbtn" data-view="messenger"><em>💬</em>Мессенджер</button>
     <button class="nbtn" data-view="admin" id="adminNav" hidden><em>👑</em>Админ-панель</button>
     <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
+    <button class="nbtn" data-view="premium"><em>✦</em>Premium</button>
   </nav>
 </div>
 <div id="wipe"></div>
 <div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
 <div id="toast"></div>
 
-<script src="script.js?v=8"></script>
+<script src="script.js?v=9"></script>
 </body>
 </html>

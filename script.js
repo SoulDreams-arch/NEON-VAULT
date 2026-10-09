@@ -40,7 +40,7 @@ async function api(path,opts={}) {
  if(path==='/auth/logout'){try{sessionStorage.removeItem(API_TOKEN_KEY)}catch{}}
  return d;
 }
-function hydrateServerUser(u){const state=u?.state&&typeof u.state==='object'?u.state:{};const a=norm({...newAcc(u.id,'user',u.name),...state,id:u.id,name:u.name,type:'user',owner:u.role==='owner'||u.owner===true,creator:u.role==='owner'||u.creator===true,role:u.role||'user',status:u.status||'active'});delete a.pass;return a}
+function hydrateServerUser(u){const state=u?.state&&typeof u.state==='object'?u.state:{};const a=norm({...newAcc(u.id,'user',u.name),...state,id:u.id,name:u.name,type:'user',owner:u.role==='owner'||u.owner===true,creator:u.role==='owner'||u.creator===true,role:u.role||'user',status:u.status||'active',presence:u.presence||null,premium:!!u.premium,premiumUntil:Number(u.premiumUntil)||0,banner:u.banner||'',warningCount:Number(u.warningCount)||0});delete a.pass;return a}
 let serverSaveTimer=null,serverSaveSeq=0;function saveServerState(){if(!API_ON||!me)return;clearTimeout(serverSaveTimer);const uid=me.id,seq=++serverSaveSeq;serverSaveTimer=setTimeout(()=>{if(!me||me.id!==uid)return;const state={...me};delete state.pass;delete state.owner;delete state.creator;delete state.role;delete state.status;api('/account/state',{method:'PUT',body:JSON.stringify({state})}).then(d=>{if(seq===serverSaveSeq&&d.user&&me&&me.id===uid){const a=hydrateServerUser(d.user);const localPass=me.pass;me={...me,...a};if(localPass)me.pass=localPass;}}).catch(e=>{if(e.message.includes('Сессия')||e.message.includes('Войди'))toast('Сессия истекла. Войди снова.');else console.warn('Server save failed:',e.message)})},450)}
 async function flushServerState(){if(!API_ON||!me)return;clearTimeout(serverSaveTimer);const state={...me};delete state.pass;delete state.owner;delete state.creator;delete state.role;delete state.status;await api('/account/state',{method:'PUT',body:JSON.stringify({state})})}
 async function refreshServerUsers(){if(!API_ON)return;try{const d=await api('/users');const all=LS.get('nv_acc',{});for(const u of d.users||[]){const a=hydrateServerUser(u);const old=all[a.id];all[a.id]=old?{...old,...a,pass:old.pass}:a;}if(me&&all[me.id])all[me.id]=me;accounts=all;LS.set('nv_acc',accounts)}catch(e){console.warn('Directory refresh failed:',e.message)}}
@@ -373,12 +373,12 @@ function render(){
   $('#miniNick').textContent=me.name;$('#lobNick').textContent=me.name;
   const bn=$('#bigNick');bn.textContent=me.name;bn.className='nick fx-'+me.fx;bn.style.setProperty('--nc',me.nc);
   $('#mail').textContent=me.type==='google'&&me.email?me.email:TYPE_LBL[me.type];
-  $('#banner').style.background=bgCss();
+  $('#banner').style.background=(me.premium&&(me.premiumUntil===-1||Number(me.premiumUntil)>Date.now())&&me.banner)?`center/cover no-repeat url(\"${String(me.banner).replace(/\"/g,'%22')}\")`:bgCss();
   $('#nickIn').value=me.name;$('#fxSel').value=me.fx;$('#nickCol').value=me.nc;$('#accCol').value=me.accent;
   $$('#emo button').forEach(b=>b.classList.toggle('on',me.av.t==='emoji'&&b.textContent===me.av.v));
   $$('#sws .sw').forEach((b,i)=>b.classList.toggle('on',me.bg.t==='grad'&&me.bg.v===i));
   const bt=$('#bigTags');bt.replaceChildren(...shownTags(me).map(tagEl));
-  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();renderTapper();renderAdmin();renderLobbyCommunity();renderMessenger();$('#adminNav').hidden=!me.owner;
+  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();renderTapper();renderAdmin();renderLobbyCommunity();renderMessenger();$('#adminNav').hidden=!isStaff();
 }
 function stats(){$('#stC').textContent=me.coins.toLocaleString('ru');$('#stG').textContent=me.games;$('#stW').textContent=me.won.toLocaleString('ru');$('#stB').textContent=me.best.toLocaleString('ru')}
 function updBal(quiet){$('#balN').textContent=me.coins.toLocaleString('ru');if(!quiet){const b=$('#bal');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}stats()}
@@ -399,7 +399,7 @@ $('#nickIn').onkeydown=e=>{if(e.key==='Enter')e.target.blur()};
 $('#fxSel').onchange=e=>{me.fx=e.target.value;save();render()};
 $('#nickCol').oninput=e=>{me.nc=e.target.value;save();$('#bigNick').style.setProperty('--nc',me.nc)};
 $('#accCol').oninput=e=>{me.accent=e.target.value;save();document.documentElement.style.setProperty('--accent',me.accent)};
-$('#bgCol').oninput=e=>{me.bg={t:'color',v:e.target.value};save();$('#banner').style.background=bgCss();$$('#sws .sw').forEach(b=>b.classList.remove('on'))};
+$('#bgCol').oninput=e=>{me.bg={t:'color',v:e.target.value};save();$('#banner').style.background=(me.premium&&(me.premiumUntil===-1||Number(me.premiumUntil)>Date.now())&&me.banner)?`center/cover no-repeat url(\"${String(me.banner).replace(/\"/g,'%22')}\")`:bgCss();$$('#sws .sw').forEach(b=>b.classList.remove('on'))};
 function readImg(file,max,cb,square){
   const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{
     const c=document.createElement('canvas'),x=c.getContext('2d');
@@ -436,7 +436,7 @@ function renderSec(){
 }
 
 /* ---------- Друзья ---------- */
-const isOnline=a=>a.id===me.id||(a.on&&Date.now()-a.seen<ONLINE_MS);
+const isOnline=a=>a.id===me.id||(a.presence&&a.presence.mode==='online'&&Date.now()-Number(a.presence.last_seen||0)<60000)||(!a.presence&&a.on&&Date.now()-a.seen<ONLINE_MS);
 function ago(t){
   const m=Math.floor((Date.now()-t)/6e4);
   if(m<1)return 'только что';if(m<60)return m+' мин назад';
@@ -452,8 +452,8 @@ function friendRow(a,k,acts){
   const top=document.createElement('div');top.className='ftop';
   const n=document.createElement('b');n.textContent=a.name;n.className='fx-'+a.fx;n.style.setProperty('--nc',a.nc);
   const tag=document.createElement('span');tag.className='tag t-'+a.type;tag.textContent=TYPE_LBL[a.type].toLowerCase();
-  top.append(n,tag);
-  const m=document.createElement('small');m.textContent=`🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games} · ${isOnline(a)?'в сети':ago(a.seen)}`;
+  top.append(n,tag);if(a.premium&&a.petTagId){const pt=document.createElement('span');pt.className='role-tag premium-tag';pt.textContent='🐾 '+a.petTagId;top.appendChild(pt)}
+  const m=document.createElement('small');m.textContent=`🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games} · ${a.presence?.mode==='busy'?'не беспокоить':a.presence?.mode==='offline'?'не в сети':isOnline(a)?'в сети':ago(a.seen)}`;
   fi.append(top,tagsRow(a),m);r.append(av,fi,...acts);return r;
 }
 function renderFriends(){
@@ -472,7 +472,7 @@ function renderFriends(){
   const others=Object.values(accounts).filter(a=>a.id!==me.id&&!me.friends.includes(a.id)&&(!q||keyName(a.name).includes(q)))
     .sort((a,b)=>isOnline(b)-isOnline(a)||b.seen-a.seen).slice(0,30);
   if(!others.length)empty(sg,q?'Никого с таким ником не нашлось':'Здесь появятся все, кто зайдёт в систему — хоть гостем');
-  others.forEach((a,i)=>sg.appendChild(friendRow(a,i,[btnEl('➕','ib','Добавить в друзья',()=>link(a.id))])));
+  others.forEach((a,i)=>sg.appendChild(friendRow(a,i,[btnEl('➕','ib','Отправить заявку в друзья',()=>requestFriend(a.id,a.name))])));
 }
 function link(id){
   const name=tx(acc=>{
@@ -566,7 +566,7 @@ function renderTop(){
     const fi=document.createElement('div');fi.className='fi';
     const top=document.createElement('div');top.className='ftop';
     const n=document.createElement('b');n.textContent=a.name;n.className='fx-'+a.fx;n.style.setProperty('--nc',a.nc);top.appendChild(n);
-    if(a.id===me.id){const y=document.createElement('span');y.className='tag';y.textContent='ты';top.appendChild(y)}
+    if(a.id===me.id){const y=document.createElement('span');y.className='tag';y.textContent='ты';top.appendChild(y)}if(i===0){const y=document.createElement('span');y.className='role-tag';y.textContent='🏆 TOP 1';top.appendChild(y)}else if(i<5){const y=document.createElement('span');y.className='role-tag';y.textContent='TOP '+(i+1);top.appendChild(y)}
     const s=document.createElement('small');s.textContent=`🏆 макс. выигрыш: ${a.best.toLocaleString('ru')} · 🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games}`;
     fi.append(top,tagsRow(a),s);
     const v=document.createElement('div');v.className='tv';v.textContent=m.v(a).toLocaleString('ru');
@@ -742,7 +742,7 @@ async function go(id,ev){
   const to=$('#v-'+id);
   await transition(()=>{
     $('#v-'+curView).classList.remove('active','pop');to.classList.add('active');to.scrollTop=0;curView=id;
-    if(id==='friends')renderFriends();if(id==='messenger')renderMessenger();if(id==='lobby')renderLobbyCommunity();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='evolution'){renderTapper();renderEvolutionScreen()}if(id==='admin'){if(!me.owner){toast('Нет доступа');navBusy=false;return}renderAdmin()}
+    if(id==='friends')renderFriends();if(id==='messenger')renderMessenger();if(id==='lobby')renderLobbyCommunity();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='evolution'){renderTapper();renderEvolutionScreen()}if(id==='admin'){if(!isStaff()){toast('Нет доступа');navBusy=false;return}renderAdmin()}
   },()=>popIn(to),ev);
   navBusy=false;
 }
@@ -839,7 +839,7 @@ async function sendChatMessage(payload){
 $('#newGroupBtn')?.addEventListener('click',createGroupChat);
 $('#newDmBtn')?.addEventListener('click',()=>{const name=prompt('Ник друга, которому написать:');if(!name)return;sync();const a=Object.values(accounts).find(x=>keyName(x.name)===keyName(name));if(!a)return toast('Игрок не найден');if(!me.friends.includes(a.id))return toast('Сначала добавь игрока в друзья');openDirectChat(a.id)});
 $('#chatSearch')?.addEventListener('input',renderMessenger);
-setInterval(()=>{if(API_ON&&me&&curView==='messenger'&&!$('#chatText')?.matches(':focus'))renderMessenger()},10000);
+setInterval(()=>{if(API_ON&&me&&curView==='messenger'&&!$('#chatText')?.matches(':focus'))renderMessenger()},3000);
 $('#chatCompose')?.addEventListener('submit',e=>{e.preventDefault();const text=$('#chatText').value.trim();if(text)sendChatMessage({kind:'text',text})});
 const QUICK_EMOJI=['😀','😂','🥹','😍','😎','😭','🔥','💜','💗','✨','🎉','👍','👀','🤝','🫶','🐱','🐰','🐻'];
 const QUICK_STICKERS=['🐱💖','🐰✨','🐻🫶','😻','ฅ^•ﻌ•^ฅ','(づ｡◕‿‿◕｡)づ','✨ NEON ✨','🐾'];
@@ -936,16 +936,16 @@ setInterval(()=>{if(me&&me.tapIdle>0){me.tapCurrency+=me.tapIdle;me.tapLast=Date
 
 /* ---------- Панель владельца (локальная версия) ---------- */
 async function renderAdmin(){
- if(!me||!me.owner){$('#adminNav').hidden=true;return}$('#adminNav').hidden=false;
+ if(!me||!isStaff()){$('#adminNav').hidden=true;return}$('#adminNav').hidden=false;const delBtn=$('#adminDeleteUserBtn');if(delBtn)delBtn.hidden=!me.owner;
  if(API_ON){try{const d=await api('/admin/overview');$('#adminUsers').textContent=d.users??0;$('#adminCoins').textContent=(d.coins||0).toLocaleString('ru');$('#adminHearts').textContent=(d.hearts||0).toLocaleString('ru');}catch(e){toast(e.message);return}}
  const all=Object.values(sync());const sel=$('#adminUser'),old=sel.value;sel.innerHTML='';all.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+' ('+(+a.coins||0)+' 🪙)'+(a.status==='banned'?' · БАН':'');sel.appendChild(o)});if(old)sel.value=old;
  const box=$('#adminUserList');if(box){box.innerHTML='';all.slice(0,50).forEach(a=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=a.name+' · '+(a.role==='owner'?'Владелец':a.role==='moderator'?'Модератор':'Игрок')+' · '+(a.status==='banned'?'Заблокирован':'Активен');row.appendChild(label);box.appendChild(row)})}
 }
-async function adminGrant(field){if(!me||!me.owner)return toast('Нет доступа');const id=$('#adminUser').value,n=Math.floor(+(field==='coins'?$('#adminGrant').value:$('#adminGrantHearts').value));if(!id||!(n>0))return toast('Выбери аккаунт и укажи сумму');if(API_ON){try{await api('/admin/users/'+encodeURIComponent(id)+'/grant',{method:'POST',body:JSON.stringify({field,amount:n})});await refreshServerUsers();if(id===me.id){const mine=await api('/auth/me');me=hydrateServerUser(mine.user);const all=LS.get('nv_acc',{});all[me.id]=me;LS.set('nv_acc',all);updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru')+(field==='coins'?' 🪙':' 💗'));return}catch(e){return toast(e.message)}}const all=sync(),a=all[id];if(!a)return toast('Аккаунт не найден');a[field]=(+(a[field])||0)+n;LS.set('nv_acc',all);accounts=all;if(id===me.id){me=a;updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru'))}
+async function adminGrant(field){if(!me||!isStaff())return toast('Нет доступа');const id=$('#adminUser').value,n=Math.floor(+(field==='coins'?$('#adminGrant').value:$('#adminGrantHearts').value));if(!id||!(n>0))return toast('Выбери аккаунт и укажи сумму');if(API_ON){try{await api('/admin/users/'+encodeURIComponent(id)+'/grant',{method:'POST',body:JSON.stringify({field,amount:n})});await refreshServerUsers();if(id===me.id){const mine=await api('/auth/me');me=hydrateServerUser(mine.user);const all=LS.get('nv_acc',{});all[me.id]=me;LS.set('nv_acc',all);updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru')+(field==='coins'?' 🪙':' 💗'));return}catch(e){return toast(e.message)}}const all=sync(),a=all[id];if(!a)return toast('Аккаунт не найден');a[field]=(+(a[field])||0)+n;LS.set('nv_acc',all);accounts=all;if(id===me.id){me=a;updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru'))}
 $('#adminGrantBtn').onclick=()=>adminGrant('coins');
 $('#adminGrantHeartsBtn')?.addEventListener('click',()=>adminGrant('tapCurrency'));
-$('#adminSearchBtn')?.addEventListener('click',async()=>{if(!me?.owner)return;if(!API_ON)return renderAdmin();try{const d=await api('/admin/users?q='+encodeURIComponent($('#adminSearch').value));const box=$('#adminUserList');box.innerHTML='';d.users.forEach(a=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=`${a.name} · ${a.coins} 🪙 · ${a.status==='banned'?'Блок':'Активен'}`;const ban=document.createElement('button');ban.className='btn ghost';ban.textContent=a.status==='banned'?'Разблокировать':'Заблокировать';ban.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/status',{method:'PATCH',body:JSON.stringify({status:a.status==='banned'?'active':'banned'})});toast('Статус аккаунта изменён');renderAdmin()}catch(e){toast(e.message)}};const role=document.createElement('button');role.className='btn ghost';role.textContent='Модератор';role.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/role',{method:'PATCH',body:JSON.stringify({role:'moderator'})});toast('Роль обновлена');renderAdmin()}catch(e){toast(e.message)}};row.append(label,ban,role);box.appendChild(row)})}catch(e){toast(e.message)}});
-$('#adminAuditBtn')?.addEventListener('click',async()=>{if(!me?.owner||!API_ON)return toast('Доступно в серверной версии');try{const d=await api('/admin/audit');const box=$('#adminAudit');box.innerHTML='';d.rows.forEach(x=>{const row=document.createElement('div');row.className='admin-user-row';row.textContent=new Date(x.created_at).toLocaleString('ru')+' · '+x.action+' · '+(x.target_id||'—');box.appendChild(row)})}catch(e){toast(e.message)}});
+$('#adminSearchBtn')?.addEventListener('click',async()=>{if(!isStaff())return;if(!API_ON)return renderAdmin();try{const d=await api('/admin/users?q='+encodeURIComponent($('#adminSearch').value));const box=$('#adminUserList');box.innerHTML='';d.users.forEach(a=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=`${a.name} · ${a.coins} 🪙 · ${a.status==='banned'?'Блок':'Активен'}`;const ban=document.createElement('button');ban.className='btn ghost';ban.textContent=a.status==='banned'?'Разблокировать':'Заблокировать';ban.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/status',{method:'PATCH',body:JSON.stringify({status:a.status==='banned'?'active':'banned'})});toast('Статус аккаунта изменён');renderAdmin()}catch(e){toast(e.message)}};const role=document.createElement('button');role.className='btn ghost';role.textContent='Модератор';role.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/role',{method:'PATCH',body:JSON.stringify({role:'moderator'})});toast('Роль обновлена');renderAdmin()}catch(e){toast(e.message)}};if(me.owner)row.append(label,ban,role);else row.append(label,ban);box.appendChild(row)})}catch(e){toast(e.message)}});
+$('#adminAuditBtn')?.addEventListener('click',async()=>{if(!isStaff()||!API_ON)return toast('Доступно в серверной версии');try{const d=await api('/admin/audit');const box=$('#adminAudit');box.innerHTML='';d.rows.forEach(x=>{const row=document.createElement('div');row.className='admin-user-row';row.textContent=new Date(x.created_at).toLocaleString('ru')+' · '+x.action+' · '+(x.target_id||'—');box.appendChild(row)})}catch(e){toast(e.message)}});
 $('#ownerDeactivate').onclick=async()=>{if(!me||!me.owner)return;if(API_ON){try{await api('/admin/deactivate-owner',{method:'POST'});me.owner=false;me.creator=false;me.role='user'}catch(e){return toast(e.message)}}else{me.owner=false;me.creator=false}me.tags=me.tags.filter(id=>TAG_BY[id]&&TAG_BY[id].g!=='creator');save();$('#adminNav').hidden=true;go('lobby');render();toast('Статус владельца снят')};
 
 /* ---------- Общее для игр ---------- */
@@ -1031,3 +1031,178 @@ function renderEvolutionScreen(){
   const mini=document.getElementById('evoMiniCollection');if(mini)mini.innerHTML=owned.slice(0,8).map(x=>`<button type="button" class="evo-mini-pet ${p&&p.id===x.id?'selected':''}" data-evo-pet="${x.id}" title="${x.name}"><img src="${petArtSrc(x.id)}" alt=""><span>${x.name}</span></button>`).join('')||'<p class="sub">Пока нет купленных питомцев.</p>';
   if(mini)mini.querySelectorAll('[data-evo-pet]').forEach(b=>b.addEventListener('click',()=>{choosePet(b.dataset.evoPet);renderEvolutionScreen()}));
 }
+
+
+async function requestFriend(id,name){
+ if(!API_ON)return toast('Заявки в друзья требуют подключения к серверу');
+ try{await api('/friends/requests',{method:'POST',body:JSON.stringify({userId:id})});toast('Заявка отправлена: '+name);await renderFriendRequests()}catch(e){toast(e.message)}
+}
+/* ===== NEON VAULT COMMUNITY UPGRADE ===== */
+function isStaff(){return !!(me&&(me.owner||me.role==='owner'||me.role==='moderator'))}
+function stashMe(){if(!me)return;const all=LS.get('nv_acc',{});all[me.id]=me;LS.set('nv_acc',all);updBal();if(typeof renderTop==='function')renderTop()}
+function persistPresence(mode='online'){if(!API_ON||!me)return;api('/presence',{method:'POST',body:JSON.stringify({mode})}).catch(()=>{})}
+const presenceSelect=$('#presenceMode');
+if(presenceSelect)presenceSelect.addEventListener('change',()=>{persistPresence(presenceSelect.value);toast('Статус изменён')});
+async function renderFriendRequests(){
+ const box=$('#friendRequests');if(!box)return;box.innerHTML='';
+ if(!API_ON){box.textContent='Заявки доступны после подключения к серверу.';return}
+ try{
+  const d=await api('/friends/requests'),incoming=d.incoming||[],outgoing=d.outgoing||[];
+  if(!incoming.length&&!outgoing.length){box.textContent='Новых заявок нет.';return}
+  incoming.forEach(r=>{const row=document.createElement('div');row.className='friend-row';const label=document.createElement('span');label.textContent='📨 '+r.name+' хочет добавить тебя';row.appendChild(label);
+   const yes=document.createElement('button');yes.className='btn';yes.textContent='Принять';yes.onclick=async()=>{try{await api('/friends/requests/'+encodeURIComponent(r.id)+'/respond',{method:'POST',body:JSON.stringify({accept:true})});await refreshServerUsers();renderFriendRequests();renderFriends();toast('Теперь вы друзья!')}catch(e){toast(e.message)}};
+   const no=document.createElement('button');no.className='btn ghost';no.textContent='Отклонить';no.onclick=async()=>{try{await api('/friends/requests/'+encodeURIComponent(r.id)+'/respond',{method:'POST',body:JSON.stringify({accept:false})});renderFriendRequests()}catch(e){toast(e.message)}};
+   row.append(yes,no);box.appendChild(row);
+  });
+  outgoing.forEach(r=>{const row=document.createElement('div');row.className='friend-row';row.textContent='⌛ Заявка отправлена: '+r.name;box.appendChild(row)});
+ }catch(e){box.textContent='Не удалось загрузить заявки: '+e.message}
+}
+const oldFriendSubmit=$('#frForm')?.onsubmit;
+if($('#frForm'))$('#frForm').onsubmit=async e=>{
+ e.preventDefault();const v=normName($('#frIn').value);if(!v)return;
+ if(!API_ON){if(oldFriendSubmit)return oldFriendSubmit(e);return toast('Сервер друзей не подключён')}
+ try{
+  const d=await api('/users');const target=(d.users||[]).find(u=>keyName(u.name)===keyName(v));
+  if(!target)return toast('Игрок не найден');if(target.id===me.id)return toast('Себя добавить нельзя 🙂');
+  await api('/friends/requests',{method:'POST',body:JSON.stringify({userId:target.id})});
+  $('#frIn').value='';await renderFriendRequests();toast('Заявка в друзья отправлена');
+ }catch(err){toast(err.message);renderFriendRequests()}
+};
+const oldGo=go;
+async function renderGlobalChat(){
+ const box=$('#globalChatMessages');if(!box||!me||!API_ON)return;
+ try{
+  const d=await api('/community/global');const rows=d.messages||[];box.innerHTML='';
+  rows.forEach(m=>{
+   const wrap=document.createElement('div');wrap.className='global-chat-msg';
+   let payload=null;try{payload=JSON.parse(m.body)}catch{}
+   if(payload&&payload.kind==='jackpot'){wrap.classList.add('jackpot');const meta=document.createElement('div');meta.className='meta';meta.textContent='🏆 СИСТЕМНОЕ СОБЫТИЕ';const body=document.createElement('div');body.className='body';body.textContent=payload.text;wrap.append(meta,body)}
+   else{const meta=document.createElement('div');meta.className='meta';const role=m.role==='owner'?'👑 Владелец':m.role==='moderator'?'🛡 Модератор':m.sender;meta.textContent=role+' · '+new Date(m.created_at).toLocaleTimeString('ru',{hour:'2-digit',minute:'2-digit'});if(['owner','moderator'].includes(m.role)){const tag=document.createElement('span');tag.className='role-tag';tag.textContent=m.role==='owner'?'ВЛАДЕЛЕЦ':'МОДЕРАТОР';meta.append(tag)}const body=document.createElement('div');body.className='body';body.textContent=m.body;wrap.append(meta,body)}
+   box.appendChild(wrap);
+  });
+  box.scrollTop=box.scrollHeight;
+ }catch(e){console.warn('Global chat:',e.message)}
+}
+$('#globalChatForm')?.addEventListener('submit',async e=>{
+ e.preventDefault();const input=$('#globalChatInput'),body=input.value.trim();if(!body)return;
+ if(!API_ON)return toast('Общий чат требует подключения к серверу');
+ try{await api('/community/global',{method:'POST',body:JSON.stringify({body})});input.value='';await renderGlobalChat()}catch(err){toast(err.message)}
+});
+async function refreshAnnouncement(){
+ const box=$('#globalAnnouncement');if(!box||!API_ON)return;
+ try{const d=await api('/announcements/active');const a=d.announcement;if(!a){box.hidden=true;return}
+ $('#globalAnnouncementText').textContent=a.message;$('#globalAnnouncementBy').textContent=' · '+a.actor;box.hidden=false;
+ }catch{}
+}
+async function adminPostAnnouncement(){
+ if(!isStaff())return toast('Нет доступа');const message=$('#adminAnnouncement')?.value.trim();if(!message)return toast('Напиши текст оповещения');
+ try{await api('/announcements',{method:'POST',body:JSON.stringify({message})});$('#adminAnnouncement').value='';await refreshAnnouncement();toast('Оповещение опубликовано на 1 минуту')}catch(e){toast(e.message)}
+}
+$('#adminAnnouncementBtn')?.addEventListener('click',adminPostAnnouncement);
+function selectedAdminId(){return $('#adminUser')?.value||''}
+$('#adminWarnBtn')?.addEventListener('click',async()=>{
+ const id=selectedAdminId(),reason=$('#adminWarnReason')?.value.trim();if(!id||!reason)return toast('Выбери игрока и укажи причину');
+ try{await api('/admin/users/'+encodeURIComponent(id)+'/warn',{method:'POST',body:JSON.stringify({reason})});$('#adminWarnReason').value='';toast('Предупреждение выдано')}catch(e){toast(e.message)}
+});
+$('#adminPremiumGrant')?.addEventListener('click',async()=>{
+ const id=selectedAdminId(),days=Math.floor(Number($('#adminPremiumDays')?.value)||30);if(!id)return toast('Выбери аккаунт');
+ try{await api('/admin/users/'+encodeURIComponent(id)+'/premium',{method:'POST',body:JSON.stringify({days})});toast('Premium выдан на '+days+' дн.');await refreshServerUsers()}catch(e){toast(e.message)}
+});
+$('#adminPremiumForever')?.addEventListener('click',async()=>{
+ const id=selectedAdminId();if(!id)return toast('Выбери аккаунт');
+ try{await api('/admin/users/'+encodeURIComponent(id)+'/premium',{method:'POST',body:JSON.stringify({permanent:true})});toast('Выдан постоянный Premium');await refreshServerUsers()}catch(e){toast(e.message)}
+});
+$('#adminPremiumRevoke')?.addEventListener('click',async()=>{
+ const id=selectedAdminId();if(!id)return toast('Выбери аккаунт');
+ try{await api('/admin/users/'+encodeURIComponent(id)+'/premium',{method:'DELETE'});toast('Premium снят');await refreshServerUsers()}catch(e){toast(e.message)}
+});
+function renderPremium(){
+ if(!me)return;
+ const active=me.premiumUntil===-1||Number(me.premiumUntil)>Date.now();
+ $('#premiumStatus').textContent=active?(me.premiumUntil===-1?'✦ Premium активен навсегда':'✦ Premium до '+new Date(Number(me.premiumUntil)).toLocaleDateString('ru')):'Обычный аккаунт · Premium не активен';
+ const banner=$('#premiumBanner');if(banner)banner.value=me.banner||'';const custom=$('.premium-customize');if(custom)custom.hidden=!active;
+ const select=$('#premiumPet');if(select){select.innerHTML='<option value="">Без питомца</option>';const pets=Array.isArray(me.petOwned)?me.petOwned:[];pets.forEach(id=>{const o=document.createElement('option');o.value=id;o.textContent=id;select.appendChild(o)});select.value=me.petTagId||''}
+}
+$('#premiumMonth')?.addEventListener('click',()=>toast('Оплата 200 ₽ пока не подключена. Подключи платёжный сервис, прежде чем принимать оплату.'));
+$('#premiumYear')?.addEventListener('click',()=>toast('Оплата 1 500 ₽ пока не подключена. Подключи платёжный сервис, прежде чем принимать оплату.'));
+$('#premiumSave')?.addEventListener('click',async()=>{
+ if(!me)return;try{const d=await api('/account/premium/appearance',{method:'POST',body:JSON.stringify({banner:$('#premiumBanner').value.trim(),petTagId:$('#premiumPet').value})});me=hydrateServerUser(d.user);stashMe();toast('Персонализация сохранена');renderPremium()}catch(e){toast(e.message)}
+});
+/* Draw the requested 6×12 slot board and use server-side random results/economy when connected. */
+function buildSlots(board=null,hit=null){
+ const el=$('#slotsMatrix');if(!el)return;el.innerHTML='';const symbols=['🍒','🍋','🔔','⭐','💎','7️⃣'];
+ const rows=board||Array.from({length:6},()=>Array.from({length:12},()=>pick(symbols)));
+ for(let r=0;r<6;r++)for(let c=0;c<12;c++){const cell=document.createElement('span');cell.className='slot-cell';cell.textContent=rows[r][c];if(hit&&hit.row===r&&c>=hit.start&&c<hit.start+hit.len)cell.classList.add('hit');el.appendChild(cell)}
+}
+buildSlots();
+$$('.bets').forEach((box,i)=>{
+ const custom=document.createElement('input');custom.type='number';custom.min='1';custom.step='1';custom.className='inp bet-custom';custom.placeholder='Своя ставка';custom.setAttribute('aria-label','Своя ставка');custom.style.cssText='width:130px;display:inline-block;margin:8px 4px';
+ custom.addEventListener('change',()=>{const v=Math.floor(Number(custom.value));if(v>0){bet=v;$$('.bets .chip').forEach(c=>c.classList.remove('on'))}});
+ const half=document.createElement('button');half.type='button';half.className='chip bet-half';half.textContent='½ баланса';half.addEventListener('click',()=>{const bal=Number(me?.coins)||0;const max=bal>=10000?Math.floor(bal/2):Math.min(bal,1000);if(max<1)return toast('Недостаточно монет');bet=max;$$('.bets .chip').forEach(c=>c.classList.remove('on'));custom.value=String(bet);toast('Ставка: '+bet.toLocaleString('ru'))});
+ box.append(custom,half);
+});
+const legacySpinS=$('#spinS')?.onclick,legacySpinW=$('#spinW')?.onclick,legacySpinC=$('#spinC')?.onclick;
+async function serverPlay(type,sideValue=0){
+ if(!me||!API_ON)throw new Error('Игровой сервер не подключён. Перезагрузи страницу или проверь /api/health.');
+ const d=await api('/game/play',{method:'POST',body:JSON.stringify({type,bet,side:sideValue})});
+ me=hydrateServerUser({...me,id:me.id,name:me.name,role:me.role,status:me.status,state:d.state,premium:me.premium,premiumUntil:me.premiumUntil,banner:me.banner,petTagId:me.petTagId,presence:me.presence});stashMe();
+ return d;
+}
+$('#spinS').onclick=async()=>{
+ if(!API_ON){return legacySpinS?.()}
+ const btn=$('#spinS');if(busy)return;busy=true;btn.disabled=true;$('#resS').textContent='Вращаем узоры…';
+ try{const d=await serverPlay('slots');buildSlots(d.details.board,d.details.pattern?{row:d.details.pattern.row||0,start:d.details.pattern.start||0,len:d.details.pattern.len}:null);
+ const p=d.details.pattern;$('#resS').className='res '+(d.win?'win':'lose');$('#resS').textContent=p?`Узор ${p.len} подряд · ${p.symbol} · выигрыш ${d.win.toLocaleString('ru')} 🪙`: 'Узор не собран · −'+bet.toLocaleString('ru')+' 🪙';
+ if(p&&p.len>=8)toast('🏆 Джекпот! Узор '+p.len+'× '+p.symbol);
+ }catch(e){toast(e.message)}finally{busy=false;btn.disabled=false}
+};
+$('#spinW').onclick=async()=>{
+ if(!API_ON)return legacySpinW?.();if(busy)return;busy=true;$('#spinW').disabled=true;
+ try{const d=await serverPlay('wheel');$('#resW').className='res '+(d.win?'win':'lose');$('#resW').textContent=`Колесо ×${d.details.multiplier} · ${d.win?'выигрыш '+d.win.toLocaleString('ru'):'не повезло'}`;if(d.details.multiplier>=10)toast('🏆 Джекпот колеса!')}
+ catch(e){toast(e.message)}finally{busy=false;$('#spinW').disabled=false}
+};
+$('#spinC').onclick=async()=>{
+ if(!API_ON)return legacySpinC?.();if(busy)return;busy=true;$('#spinC').disabled=true;
+ try{const d=await serverPlay('coin',side);$('#resC').className='res '+(d.win?'win':'lose');$('#resC').textContent=(d.details.resultSide===0?'Выпал орёл 🦅':'Выпала решка 🌙')+' · '+(d.win?'+'+d.win.toLocaleString('ru')+' 🪙':'Ставка проиграна')}
+ catch(e){toast(e.message)}finally{busy=false;$('#spinC').disabled=false}
+};
+function refreshBetLimitHint(){
+ const bal=Number(me?.coins)||0,max=bal>=10000?Math.floor(bal/2):Math.min(bal,1000);
+ const el=document.querySelector('.slot-pattern-hint');if(el)el.textContent=`Поле 6×12 · максимальная ставка сейчас ${max.toLocaleString('ru')} 🪙. От 10 000 монет доступна ставка до половины баланса.`;
+}
+const oldStats=stats;
+if(typeof stats==='function'){stats=function(){oldStats();refreshBetLimitHint()}}
+$('#presenceMode')?.addEventListener('change',()=>persistPresence($('#presenceMode').value));
+const oldRenderFriends=renderFriends;
+if(typeof renderFriends==='function'){renderFriends=function(){oldRenderFriends();renderFriendRequests()}}
+const oldGoFunction=go;
+go=function(id,ev){
+ if(id==='admin'&&!isStaff()){toast('Нет доступа');return}
+ oldGoFunction(id,ev);
+ const activeNav=['slots','wheel','coin'].includes(id)?'games':id;$$('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===activeNav));
+ if(id==='games'){renderGlobalChat()}
+ if(id==='premium'){renderPremium()}
+ if(id==='friends'){renderFriendRequests()}
+};
+setInterval(()=>{if(me&&API_ON){persistPresence(presenceSelect?.value||'online');if(curView==='games')renderGlobalChat();refreshAnnouncement()}},5000);
+setInterval(()=>{if(me&&API_ON)api('/announcements/active').then(d=>{const box=$('#globalAnnouncement');if(!box)return;if(!d.announcement){box.hidden=true;return}$('#globalAnnouncementText').textContent=d.announcement.message;$('#globalAnnouncementBy').textContent=' · '+d.announcement.actor;box.hidden=false}).catch(()=>{})},5000);
+
+async function adminAdjust(field,sign){
+ if(!isStaff())return toast('Нет доступа');const id=selectedAdminId(),input=field==='coins'?'#adminGrant':'#adminGrantHearts',amount=Math.floor(Number($(input)?.value)||0);
+ if(!id||amount<1)return toast('Выбери аккаунт и укажи сумму');
+ try{await api('/admin/users/'+encodeURIComponent(id)+'/adjust',{method:'POST',body:JSON.stringify({field,amount:amount*sign})});await refreshServerUsers();if(id===me.id){const d=await api('/auth/me');me=hydrateServerUser(d.user);stashMe()}renderAdmin();toast((sign<0?'Снято ':'Добавлено ')+amount.toLocaleString('ru')+(field==='coins'?' 🪙':' 💗'))}catch(e){toast(e.message)}
+}
+$('#adminTakeCoinsBtn')?.addEventListener('click',()=>adminAdjust('coins',-1));
+$('#adminTakeHeartsBtn')?.addEventListener('click',()=>adminAdjust('tapCurrency',-1));
+$('#adminDeleteUserBtn')?.addEventListener('click',async()=>{
+ if(!me?.owner)return toast('Удалять аккаунты может только владелец');const id=selectedAdminId();if(!id)return toast('Выбери аккаунт');if(id===me.id)return toast('Свой аккаунт удалить нельзя');
+ const target=accounts[id];if(!confirm('Удалить аккаунт '+(target?.name||id)+' без возможности восстановления?'))return;
+ try{await api('/admin/users/'+encodeURIComponent(id),{method:'DELETE'});await refreshServerUsers();renderAdmin();toast('Аккаунт удалён')}catch(e){toast(e.message)}
+});
+
+async function loadMyWarnings(){
+ const card=$('#myWarnings'),box=$('#myWarningsList');if(!card||!box||!API_ON)return;
+ try{const d=await api('/account/warnings');box.innerHTML='';const rows=d.warnings||[];card.hidden=!rows.length;rows.forEach(w=>{const p=document.createElement('p');p.className='sub';p.textContent=new Date(w.created_at).toLocaleString('ru')+' — '+w.reason;box.appendChild(p)})}catch{}
+}
+const oldProfileWarningsGo=go;
+go=function(id,ev){oldProfileWarningsGo(id,ev);if(id==='profile')loadMyWarnings()};
