@@ -153,8 +153,9 @@ async function buildWipe(){
   const W=innerWidth,H=innerHeight,key=W+'x'+H;if(key===wipeKey)return;wipeKey=key;
   try{await document.fonts.load('900 60px Orbitron')}catch{}
   const cv=drawLogo(W,H,Math.min(2,devicePixelRatio||1));
-  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
-  if(wipeUrl)URL.revokeObjectURL(wipeUrl);wipeUrl=URL.createObjectURL(blob);
+  const blob=await new Promise(r=>{try{cv.toBlob(r,'image/png')}catch{r(null)}});
+  if(wipeUrl.startsWith('blob:'))URL.revokeObjectURL(wipeUrl);
+  wipeUrl=blob?URL.createObjectURL(blob):cv.toDataURL('image/png');
   const s=W<700?44:60,cols=Math.ceil(W/s),rows=Math.ceil(H/s),frag=document.createDocumentFragment();
   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
     const t=document.createElement('i'),d=(c/cols+r/rows)/2;
@@ -168,14 +169,19 @@ let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(
 async function go(id){
   if(navBusy||id===curView)return;navBusy=true;
   $$('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===id));
-  await buildWipe();
-  const w=$('#wipe');w.style.display='block';void w.offsetWidth;w.classList.add('cover');   // квадраты с логотипом закрывают экран
-  await sleep(720);
-  $('#v-'+curView).classList.remove('active');const to=$('#v-'+id);to.classList.add('active');to.scrollTop=0;curView=id;  // вкладка меняется под логотипом
-  await sleep(350);
-  w.classList.add('leave');                                                                // квадраты уходят
-  await sleep(720);
-  w.classList.remove('cover','leave');w.style.display='none';navBusy=false;
+  const w=$('#wipe');let swapped=false;
+  const swap=()=>{if(swapped)return;swapped=true;$('#v-'+curView).classList.remove('active');const to=$('#v-'+id);to.classList.add('active');to.scrollTop=0;curView=id};
+  try{
+    await buildWipe();
+    if(!w.children.length)throw new Error('no tiles');
+    w.style.display='block';void w.offsetWidth;w.classList.add('cover');   // квадраты с логотипом закрывают экран
+    await sleep(720);
+    swap();                                                                // вкладка меняется под логотипом
+    await sleep(350);
+    w.classList.add('leave');                                              // квадраты уходят
+    await sleep(720);
+  }catch(e){console.warn('transition fallback',e);wipeKey=''}
+  swap();w.classList.remove('cover','leave');w.style.display='none';navBusy=false;
 }
 $$('.nbtn').forEach(b=>b.onclick=()=>go(b.dataset.view));
 $$('.gcard').forEach(c=>{
