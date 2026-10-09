@@ -702,13 +702,12 @@ $('#bonusBtn').onclick=async()=>{
    проявляется логотип, потом шторка плавно растворяется, а новый экран «въезжает». */
 (function buildWipe(){
   const w=$('#wipe');
-  const coins=Array.from({length:12},(_,i)=>`<div class="wp-c" style="--a:${i*30}deg"><div class="wp-ci" style="--a:${i*30}deg;--i:${i}"><div class="wp-cf" style="--i:${i}">$</div></div></div>`).join('');
+  const tiles=Array.from({length:96},(_,i)=>`<i class="vault-tile" style="--i:${i};--x:${i%12};--y:${Math.floor(i/12)}"></i>`).join('');
   const row=t=>`<div class="wp-row">${[...t].map((c,i)=>`<span style="--i:${i}">${c}</span>`).join('')}</div>`;
   const sparks=Array.from({length:22},()=>{
     const x=(Math.random()-.5)*innerWidth*.9,y=(Math.random()-.5)*innerHeight*.9;
     return `<i style="--x:${x|0}px;--y:${y|0}px;--t:${(.9+Math.random()*.9).toFixed(2)}s;--d:${(Math.random()*.6).toFixed(2)}s"></i>`}).join('');
-  w.innerHTML=`<div class="wp-grid"></div><div class="wp-glow"></div><div class="wp-orbit"></div><div class="wp-ring">${coins}</div>
-    <div class="wp-title">${row('NEON')}${row('VAULT')}</div><div class="wp-sparks">${sparks}</div><div class="wp-sweep"></div>`;
+  w.innerHTML=`<div class="wp-grid"></div><div class="vault-tilefield">${tiles}</div><div class="wp-title">${row('NEON')}${row('VAULT')}</div><div class="wp-sparks">${sparks}</div><div class="wp-sweep"></div>`;
 })();
 
 async function transition(swap,reveal,ev){
