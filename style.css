@@ -604,7 +604,8 @@ html,body{background:#030305!important;color:#f6f6f8!important}
 body{background-image:radial-gradient(ellipse at 50% -20%,rgba(255,255,255,.065),transparent 48%),linear-gradient(180deg,#030305,#050507 48%,#020203)!important}
 #starfield{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.72}
 .bg{opacity:.16;filter:grayscale(1)}
-#app,#auth,#loader,#wipe,#dlg,#toast{position:relative;z-index:1}
+/* Preserve fixed positioning and individual stacking layers. */
+#app{z-index:1}
 #app{background:transparent!important}
 #stage{background:transparent!important}
 .card,.panel,.gamebox,.pwrap,.auth-box,.gcard,.streak,.slots-odds,.doodle-side,.doodle-board-wrap,.constellation-panel{background:linear-gradient(145deg,rgba(14,14,18,.96),rgba(5,5,8,.97))!important;border:1px solid rgba(255,255,255,.25)!important;box-shadow:0 0 0 1px rgba(255,255,255,.025),0 16px 48px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.035)!important;backdrop-filter:blur(18px)}
