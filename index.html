@@ -6,7 +6,7 @@
 <title>NEON VAULT — игровое казино (демо)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
@@ -67,7 +67,7 @@
   <div id="stage">
     <header class="card">
       <div class="logo"><img src="cat-sticker.webp" alt="" class="header-cat"><span>NEON VAULT</span></div>
-      <div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">¢</span><span id="balN">0</span></div>
+      <div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">🪙</span><span id="balN">0</span></div>
       <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b><select id="presenceMode" aria-label="Статус" title="Статус" class="presence-select"><option value="online">● В сети</option><option value="busy">◐ Не беспокоить</option><option value="offline">○ Не в сети</option></select></div>
     </header>
 
@@ -180,7 +180,7 @@
           </div>
           <div class="evo-control-card">
             <div class="evo-control-info"><span class="eyebrow">ТВОЯ СТАВКА</span><h3 id="evoSelectedName">Выбранный питомец</h3><p id="evoSelectedHint">Для апгрейда нужен купленный питомец стоимостью от 100 000 монет.</p><div class="evo-meta"><span id="evoChance">Шанс успеха: 30%</span><span id="evoCost">Нужен купленный питомец от 100 000 🪙</span></div></div>
-            <button class="btn gold evo-launch" id="evoRoll" type="button">✦ Запустить эволюцию</button>
+            <button class="btn gold evo-launch" id="evoRoll" type="button">✦ Зажми на 5 секунд</button><div class="evo-hold-track" aria-hidden="true"><span id="evoHoldProgress"></span></div><div id="evoReveal" class="evo-reveal" hidden></div>
           </div>
           <div class="evo-warning"><span>⚠</span><div><b>Риск разлома</b><p>При успехе ставка заменяется случайным более дорогим питомцем из каталога. При проигрыше поставленный питомец сгорает, а прогресс тапалки сбрасывается. Перед запуском появится подтверждение.</p></div></div>
           <div class="evo-lower-grid">

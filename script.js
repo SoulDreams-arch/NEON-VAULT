@@ -378,7 +378,7 @@ function render(){
   $$('#emo button').forEach(b=>b.classList.toggle('on',me.av.t==='emoji'&&b.textContent===me.av.v));
   $$('#sws .sw').forEach((b,i)=>b.classList.toggle('on',me.bg.t==='grad'&&me.bg.v===i));
   const bt=$('#bigTags');bt.replaceChildren(...shownTags(me).map(tagEl));
-  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();renderTapper();renderAdmin();renderLobbyCommunity();renderMessenger();$('#adminNav').hidden=!isStaff();
+  updBal(true);stats();renderSec();renderTags();renderDonate();renderStreak();renderTapper();renderAdmin();renderLobbyCommunity();renderMessenger();$('#adminNav').hidden=!isStaff();const adminView=document.getElementById('v-admin');if(adminView&&!isStaff()){adminView.classList.remove('active');adminView.hidden=true}else if(adminView){adminView.hidden=false}
 }
 function stats(){$('#stC').textContent=me.coins.toLocaleString('ru');$('#stG').textContent=me.games;$('#stW').textContent=me.won.toLocaleString('ru');$('#stB').textContent=me.best.toLocaleString('ru')}
 function updBal(quiet){$('#balN').textContent=me.coins.toLocaleString('ru');if(!quiet){const b=$('#bal');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}stats()}
@@ -467,12 +467,14 @@ function renderFriends(){
   friends.forEach((a,i)=>fl.appendChild(friendRow(a,i,[
     btnEl('🎁','ib','Подарить '+GIFT+' монет',()=>gift(a.id)),
     btnEl('🔁','ib','Трейд: передать монеты или питомца',()=>tradeWith(a.id)),
+    btnEl('◉','ib','Посмотреть профиль',()=>openPlayerProfile(a.id)),
     btnEl('💬','ib','Написать сообщение',()=>openDirectChat(a.id)),
     btnEl('✖','ib dng','Убрать из друзей',()=>unfriend(a.id))])));
+  const pendingOut=new Set(LS.get('nv_friend_pending_'+me.id,[]));
   const others=Object.values(accounts).filter(a=>a.id!==me.id&&!me.friends.includes(a.id)&&(!q||keyName(a.name).includes(q)))
     .sort((a,b)=>isOnline(b)-isOnline(a)||b.seen-a.seen).slice(0,30);
   if(!others.length)empty(sg,q?'Никого с таким ником не нашлось':'Здесь появятся все, кто зайдёт в систему — хоть гостем');
-  others.forEach((a,i)=>sg.appendChild(friendRow(a,i,[btnEl('➕','ib','Отправить заявку в друзья',()=>requestFriend(a.id,a.name))])));
+  others.forEach((a,i)=>{const pending=pendingOut.has(a.id);sg.appendChild(friendRow(a,i,[btnEl('◉','ib','Посмотреть профиль',()=>openPlayerProfile(a.id)),btnEl(pending?'···':'＋',pending?'ib request-pending':'ib',pending?'Ожидаем ответа пользователя':'Отправить заявку в друзья',()=>{if(!pending)requestFriend(a.id,a.name)})]));});
 }
 function link(id){
   const name=tx(acc=>{
@@ -742,10 +744,11 @@ async function go(id,ev){
   const to=$('#v-'+id);
   await transition(()=>{
     $('#v-'+curView).classList.remove('active','pop');to.classList.add('active');to.scrollTop=0;curView=id;
-    if(id==='friends')renderFriends();if(id==='messenger')renderMessenger();if(id==='lobby')renderLobbyCommunity();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='evolution'){renderTapper();renderEvolutionScreen()}if(id==='admin'){if(!isStaff()){toast('Нет доступа');navBusy=false;return}renderAdmin()}
+    if(['slots','wheel','coin'].includes(id)){const c=document.querySelector('#v-games .global-chat-card');const target=document.querySelector('#v-'+id+' .game-chat-side');if(c&&target)target.appendChild(c)}if(id==='friends')renderFriends();if(id==='messenger')renderMessenger();if(id==='lobby')renderLobbyCommunity();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='evolution'){renderTapper();renderEvolutionScreen()}if(id==='admin'){if(!isStaff()){toast('Нет доступа');navBusy=false;return}renderAdmin()}
   },()=>popIn(to),ev);
   navBusy=false;
 }
+function setupGameStages(){const chat=document.querySelector('#v-games .global-chat-card');if(!chat)return;['slots','wheel','coin'].forEach(id=>{const view=document.getElementById('v-'+id);if(!view||view.dataset.stageReady)return;view.dataset.stageReady='1';const box=view.querySelector('.gamebox');if(!box)return;const stage=document.createElement('div');stage.className='game-stage';const info=document.createElement('aside');info.className='game-info-side';info.innerHTML='<span class=eyebrow>NEON ARCADE</span><h3>Правила и шансы</h3><p>Ставка списывается перед раундом. Результат рассчитывается сервером.</p><p>Максимальная ставка — половина баланса при наличии 10 000 монет.</p><small>Играй ответственно: результат случайный.</small>';const center=document.createElement('div');center.className='game-center';const right=document.createElement('aside');right.className='game-chat-side';right.appendChild(chat);stage.append(info,center,right);box.parentNode.insertBefore(stage,box);center.appendChild(box);view.appendChild(stage);});}setupGameStages();
 $$('.nbtn').forEach(b=>b.onclick=e=>go(b.dataset.view,e));
 $$('.gcard').forEach(c=>{
   c.onclick=e=>go(c.dataset.go,e);
@@ -883,7 +886,7 @@ const tapRanks=['Милый новичок','Пушистик','Любимчик
 function pet(){return PETS.find(p=>p.id===me.petId)||null}
 function tapRank(){return tapRanks[Math.min(tapRanks.length-1,Math.floor((me.tapLevel-1)/3))]}
 function petCard(p,starter=false){const owned=me.petId===p.id,unlocked=p.free||(me.petOwned||[]).includes(p.id);return `<article class="pet-card ${owned?'is-active':''} rarity-${p.rarity.toLowerCase().replace(/[^а-яёa-z]/g,'')}"><img class="pet-card-art" src="${petArtSrc(p.id)}" alt="${p.name}"><div class="pet-card-name">${p.name}</div><span class="pet-rarity">${p.rarity}</span><p>${p.desc}</p><button class="btn ${owned?'ghost':p.free?'':'gold'}" data-pet="${p.id}" type="button">${owned?'Активен':unlocked?'Выбрать':me.coins>=p.price?'Купить · '+p.price.toLocaleString('ru')+' 🪙':'🔒 '+p.price.toLocaleString('ru')+' 🪙'}</button></article>`}
-function renderPetCatalog(){if(!me)return;if(me.petId&&!PETS.some(p=>p.id===me.petId)){me.petId='';me.petRank=0;save()}me.petOwned=(me.petOwned||[]).filter(id=>PETS.some(p=>p.id===id));const picker=$('#petPicker');if(!me.petId)picker.hidden=false;$('#starterPets').innerHTML=PETS.filter(p=>p.free).map(p=>petCard(p,true)).join('');$('#petCatalog').innerHTML=PETS.map(p=>petCard(p)).join('');const p=pet();$('#petCurrentArt').innerHTML=p?`<img src="${petArtSrc(p.id)}" alt="${p.name}">`:`<span>Выбери</span>`;$('#petName').textContent=p?p.name:'Выбери питомца';$('#petRarity').textContent=p?p.rarity:'НЕТ ПИТОМЦА';$('#petDescription').textContent=p?p.desc:'Начни с одного из трёх бесплатных друзей.';$('#petOwnedInfo').textContent=p?`Ранг эволюции ${me.petRank||0} · активный питомец`:'Коллекция ждёт первого питомца';$('#petSticker').src=petArtSrc(p?p.id:'cat');$('#petSticker').hidden=false;$('#petEmojiTap').hidden=true;$('#petCurrentArt').hidden=false;renderPetCustom();if(document.getElementById('v-evolution'))renderEvolutionScreen();$('#petTap').setAttribute('aria-label',p?'Тапнуть по '+p.name:'Сначала выбери питомца');const stake=p&&p.price>=100000&&(me.petOwned||[]).includes(p.id);$('#evoChance').textContent='Шанс успеха: 30%';$('#evoCost').textContent=stake?'Ставка: '+p.name:'Нужен купленный питомец от 100 000 🪙';$('#evoRoll').disabled=!stake;}
+function renderPetCatalog(){if(!me)return;if(me.petId&&!PETS.some(p=>p.id===me.petId)){me.petId='';me.petRank=0;save()}me.petOwned=(me.petOwned||[]).filter(id=>PETS.some(p=>p.id===id));const picker=$('#petPicker');if(!me.petId)picker.hidden=false;$('#starterPets').innerHTML=PETS.filter(p=>p.free).map(p=>petCard(p,true)).join('');$('#petCatalog').innerHTML=PETS.map(p=>petCard(p)).join('');const p=pet();$('#petCurrentArt').innerHTML=p?`<img src="${petArtSrc(p.id)}" alt="${p.name}">`:`<span class=pet-empty-question>❔</span>`;$('#petName').textContent=p?p.name:'Выбери питомца';$('#petRarity').textContent=p?p.rarity:'НЕТ ПИТОМЦА';$('#petDescription').textContent=p?p.desc:'Начни с одного из трёх бесплатных друзей.';$('#petOwnedInfo').textContent=p?`Ранг эволюции ${me.petRank||0} · активный питомец`:'Коллекция ждёт первого питомца';$('#petSticker').src=petArtSrc(p?p.id:'cat');$('#petSticker').hidden=false;$('#petEmojiTap').hidden=true;$('#petCurrentArt').hidden=false;renderPetCustom();if(document.getElementById('v-evolution'))renderEvolutionScreen();$('#petTap').setAttribute('aria-label',p?'Тапнуть по '+p.name:'Сначала выбери питомца');const stake=p&&p.price>=100000&&(me.petOwned||[]).includes(p.id);$('#evoChance').textContent='Шанс успеха: 30%';$('#evoCost').textContent=stake?'Ставка: '+p.name:'Нужен купленный питомец от 100 000 🪙';$('#evoRoll').disabled=!stake;}
 function renderTapper(){if(!me)return;const now=Date.now(),elapsed=Math.min(3600,Math.max(0,(now-(me.tapLast||now))/1000));if(elapsed>0&&me.tapIdle)me.tapCurrency+=Math.floor(elapsed*me.tapIdle);me.tapLast=now;save();
  const xpNeed=me.tapLevel*100,powerCost=50*(me.tapPowerLv+1)**2,idleCost=100*(me.tapIdleLv+1)**2,levelCost=250*me.tapLevel;
  $('#tapLevel').textContent=me.tapLevel;$('#tapRank').textContent=tapRank();$('#tapCurrency').textContent=me.tapCurrency.toLocaleString('ru')+' 💗';$('#tapPower').textContent='+'+me.tapPower;$('#tapIdle').textContent=me.tapIdle.toLocaleString('ru');$('#tapXpText').textContent=(me.tapXp%xpNeed).toLocaleString('ru')+' / '+xpNeed.toLocaleString('ru');$('#tapXpBar').style.width=Math.min(100,(me.tapXp%xpNeed)/xpNeed*100)+'%';$('#petSticker').src=petArtSrc(me.petId||'cat');$('#petSticker').style.filter=me.tapLevel>=20?'hue-rotate(115deg) saturate(1.7) drop-shadow(0 15px 28px #22d3ee88)':me.tapLevel>=12?'hue-rotate(55deg) saturate(1.5) drop-shadow(0 15px 28px #fbbf2488)':me.tapLevel>=7?'hue-rotate(-25deg) saturate(1.4) drop-shadow(0 15px 28px #c084fc88)':me.tapLevel>=4?'saturate(1.25) drop-shadow(0 15px 28px #fb718688)':'drop-shadow(0 15px 25px #f472b655)';$('#convertInfo').textContent='Доступно: '+me.tapCurrency.toLocaleString('ru')+' 💗';$('#powerCost').textContent='Цена: '+powerCost.toLocaleString('ru')+' 💗';$('#idleCost').textContent='Цена: '+idleCost.toLocaleString('ru')+' 💗';$('#levelCost').textContent='Цена: '+levelCost.toLocaleString('ru')+' 💗';
@@ -897,7 +900,7 @@ $('#upgradePower').onclick=()=>{const c=50*(me.tapPowerLv+1)**2;if(me.tapCurrenc
 $('#upgradeIdle').onclick=()=>{const c=100*(me.tapIdleLv+1)**2;if(me.tapCurrency<c)return;me.tapCurrency-=c;me.tapIdleLv++;me.tapIdle+=1;save();renderTapper();toast('✨ Авто-обнимашки улучшены!')};
 $('#upgradeLevel').onclick=()=>{const c=250*me.tapLevel;if(me.tapCurrency<c)return;me.tapCurrency-=c;me.tapLevel++;me.tapXp=0;save();renderTapper();toast('🌟 Питомец эволюционировал!')};
 $('#convertCurrency').onclick=()=>{const bundles=Math.floor(me.tapCurrency/10000);if(!bundles)return toast('Нужно минимум 10 000 💗');const hearts=bundles*10000,coins=bundles*100;me.tapCurrency-=hearts;me.coins+=coins;save();updBal();renderTapper();toast('Обмен: '+hearts.toLocaleString('ru')+' 💗 → '+coins.toLocaleString('ru')+' 🪙')};
-$('#evoRoll').onclick=async()=>{
+const runEvolution=async()=>{
  const p=pet();
  if(!p||p.price<100000||!(me.petOwned||[]).includes(p.id))return toast('Для эволюции нужен активный купленный питомец от 100 000 монет');
  const upgrades=PETS.filter(x=>!x.free&&x.price>p.price).sort((a,b)=>a.price-b.price);
@@ -932,6 +935,7 @@ $('#evoRoll').onclick=async()=>{
    me.petOwned=me.petOwned.filter(id=>id!==p.id);if(me.petTagId===p.id)me.petTagId='';me.petId='';me.petRank=0;me.tapCurrency=0;me.tapLevel=1;me.tapPower=1;me.tapPowerLv=0;me.tapIdle=0;me.tapIdleLv=0;me.tapXp=0;me.tapLast=Date.now();save();renderTapper();$('#petPicker').hidden=false;$('#petPicker').scrollIntoView({behavior:'smooth',block:'start'});toast('💥 Апгрейд не прошёл! '+p.name+' сгорел — прогресс обнулён. Выбери бесплатного питомца.');
  }
 };
+(function setupEvolutionHold(){const btn=document.getElementById('evoRoll'),bar=document.getElementById('evoHoldProgress'),reveal=document.getElementById('evoReveal');if(!btn)return;let timer=null,start=0,done=false;const reset=()=>{if(timer)clearInterval(timer);timer=null;start=0;done=false;if(bar)bar.style.width='0%';btn.classList.remove('holding');};const begin=e=>{if(btn.disabled||timer)return;e?.preventDefault?.();start=Date.now();done=false;btn.classList.add('holding');timer=setInterval(()=>{const pct=Math.min(100,(Date.now()-start)/5000*100);if(bar)bar.style.width=pct+'%';btn.textContent='Удерживай… '+Math.ceil((5000-(Date.now()-start))/1000)+'с';if(pct>=100){clearInterval(timer);timer=null;done=true;btn.classList.remove('holding');btn.textContent='✦ Портал открыт';if(reveal){reveal.hidden=false;reveal.textContent='✦ НЕОНОВЫЙ РАЗЛОМ ✦';reveal.classList.add('evo-reveal-active')}setTimeout(()=>{if(done){done=false;runEvolution().finally(()=>{if(reveal){reveal.classList.remove('evo-reveal-active');reveal.hidden=true}btn.textContent='✦ Зажми на 5 секунд';if(bar)bar.style.width='0%'})}},650)}},40)};btn.addEventListener('pointerdown',begin);['pointerup','pointerleave','pointercancel'].forEach(ev=>btn.addEventListener(ev,()=>{if(timer)reset()}));btn.addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&!timer){e.preventDefault();begin(e)}});btn.addEventListener('keyup',e=>{if(e.key===' '||e.key==='Enter')if(timer)reset()});})();
 setInterval(()=>{if(me&&me.tapIdle>0){me.tapCurrency+=me.tapIdle;me.tapLast=Date.now();save();if(curView==='tap')renderTapper()}},1000);
 
 /* ---------- Панель владельца (локальная версия) ---------- */
@@ -1035,7 +1039,7 @@ function renderEvolutionScreen(){
 
 async function requestFriend(id,name){
  if(!API_ON)return toast('Заявки в друзья требуют подключения к серверу');
- try{await api('/friends/requests',{method:'POST',body:JSON.stringify({userId:id})});toast('Заявка отправлена: '+name);await renderFriendRequests()}catch(e){toast(e.message)}
+ try{await api('/friends/requests',{method:'POST',body:JSON.stringify({userId:id})});const key='nv_friend_pending_'+me.id;const list=LS.get(key,[]);if(!list.includes(id))list.push(id);LS.set(key,list);toast('Заявка отправлена: '+name);renderFriends();await renderFriendRequests()}catch(e){toast(e.message)}
 }
 /* ===== NEON VAULT COMMUNITY UPGRADE ===== */
 function isStaff(){return !!(me&&(me.owner||me.role==='owner'||me.role==='moderator'))}
@@ -1206,3 +1210,26 @@ async function loadMyWarnings(){
 }
 const oldProfileWarningsGo=go;
 go=function(id,ev){oldProfileWarningsGo(id,ev);if(id==='profile')loadMyWarnings()};
+
+
+// Public player profile: comments are stored on the server, escaped via textContent, and moderated by author/staff.
+async function openPlayerProfile(userId){
+ if(!me)return toast('Войди в аккаунт, чтобы смотреть профили.');
+ try{
+  const d=await api('/users/'+encodeURIComponent(userId)+'/profile'); const p=d.profile;
+  let modal=document.getElementById('playerProfileModal'); if(!modal){modal=document.createElement('div');modal.id='playerProfileModal';modal.className='profile-overlay';modal.innerHTML='<section class="profile-sheet" role="dialog" aria-modal="true" aria-label="Профиль игрока"><button class="profile-close" aria-label="Закрыть">×</button><div class="profile-hero"><div class="profile-avatar"></div><div class="profile-headline"><div class="profile-kicker">PLAYER ARCHIVE</div><h2 class="profile-name"></h2><div class="profile-meta"></div></div></div><div class="profile-stats"></div><div class="profile-comment-area"><div class="profile-section-title">Заметки сообщества <span>•</span></div><p class="profile-subtitle">Оставь доброе слово — комментарии видны всем посетителям профиля.</p><form class="profile-comment-form"><textarea maxlength="500" placeholder="Напиши комментарий…" required></textarea><div class="profile-form-foot"><small>До 500 символов</small><button class="btn" type="submit">Опубликовать</button></div></form><div class="profile-comments"></div></div></section>' ;document.body.appendChild(modal);modal.querySelector('.profile-close').onclick=()=>modal.remove();modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});}
+  modal.dataset.userId=userId; modal.querySelector('.profile-name').textContent=p.name; modal.querySelector('.profile-kicker').textContent=p.role==='owner'?'OWNER ARCHIVE':p.role==='moderator'?'MODERATOR ARCHIVE':'PLAYER ARCHIVE';
+  const av=modal.querySelector('.profile-avatar');av.textContent=p.av?.t==='emoji'?(p.av.v||'🐱'):'🐱';
+  const status=p.presence?.mode==='busy'?'Не беспокоить':p.presence?.mode==='offline'?'Не в сети':Date.now()-(p.presence?.last_seen||0)<90000?'В сети':'Недавно был в сети';
+  modal.querySelector('.profile-meta').textContent=status+' · с '+new Date(p.created||Date.now()).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  const stats=modal.querySelector('.profile-stats');stats.replaceChildren();[['ДРУЗЬЯ',p.friendsCount||0],['СТАТУС',status],['ПИТОМЕЦ',p.petId||'Пока не выбран']].forEach(([k,v])=>{const card=document.createElement('div');card.className='profile-stat';const label=document.createElement('small');label.textContent=k;const value=document.createElement('b');value.textContent=String(v);card.append(label,value);stats.append(card)});
+  modal.classList.add('show'); modal.querySelector('.profile-comment-form').onsubmit=async e=>{e.preventDefault();const ta=modal.querySelector('textarea'),body=ta.value.trim();if(!body)return;try{await api('/users/'+encodeURIComponent(userId)+'/comments',{method:'POST',body:JSON.stringify({body})});ta.value='';await loadProfileComments(modal,userId);toast('Комментарий опубликован')}catch(err){toast(err.message)}};
+  await loadProfileComments(modal,userId);modal.querySelector('.profile-close').focus();
+ }catch(e){toast(e.message||'Не удалось открыть профиль')}
+}
+async function loadProfileComments(modal,userId){
+ const box=modal.querySelector('.profile-comments');box.replaceChildren();
+ try{const d=await api('/users/'+encodeURIComponent(userId)+'/comments');if(!d.comments?.length){const empty=document.createElement('div');empty.className='profile-empty';empty.textContent='Здесь пока тихо. Будь первым, кто оставит комментарий.';box.append(empty);return}
+ for(const c of d.comments){const item=document.createElement('article');item.className='profile-comment';const head=document.createElement('div');head.className='profile-comment-head';const author=document.createElement('b');author.textContent=c.author_name;const role=document.createElement('span');role.textContent=c.author_role==='owner'?'Владелец':c.author_role==='moderator'?'Модератор':'';const date=document.createElement('time');date.textContent=new Date(c.created_at).toLocaleString('ru-RU',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});head.append(author);if(role.textContent)head.append(role);head.append(date);const body=document.createElement('p');body.textContent=c.body;item.append(head,body);if(c.author_id===me?.id||isStaff()){const del=document.createElement('button');del.className='profile-delete';del.textContent='Удалить';del.onclick=async()=>{try{await api('/users/'+encodeURIComponent(userId)+'/comments/'+encodeURIComponent(c.id),{method:'DELETE'});await loadProfileComments(modal,userId)}catch(e){toast(e.message)}};item.append(del)}box.append(item)}
+ }catch(e){const error=document.createElement('div');error.className='profile-empty';error.textContent=e.message||'Комментарии временно недоступны';box.append(error)}
+}
