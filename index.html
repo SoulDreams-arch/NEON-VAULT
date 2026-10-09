@@ -95,6 +95,11 @@
           <div class="st-grid" id="stGrid"></div>
           <p class="st-note">Заходи каждый день: 1-й день +100 монет, 2-й +200, 3-й +300 и так до 100-го дня (+10 000). Пропустил день — серия начнётся заново.</p>
         </div>
+        <section class="card daily-event" id="vaultEvent">
+          <div class="event-orbit" aria-hidden="true"><span>✦</span><i></i><b>✧</b></div>
+          <div class="event-copy"><span class="eyebrow">LIVE IN THE VAULT</span><h2 class="orb">Секрет хранилища</h2><p id="vaultEventText">Каждый день в Vault появляется новая мини-миссия. Выполни её, чтобы поддерживать серию и открывать новые цели.</p><div class="event-meta"><span class="pill-live">● МИССИЯ ДНЯ</span><span id="vaultStreakLabel">Серия: 0 дней</span></div></div>
+          <div class="event-action"><b id="vaultMissionTitle">Первый шаг</b><small id="vaultMissionHint">Сыграй один раунд в любой игре</small><button class="btn gold" id="vaultMissionBtn" type="button">Начать миссию ↗</button><small id="vaultMissionStatus" aria-live="polite">Миссия обновляется ежедневно</small></div>
+        </section>
         <div class="games">
           <div class="card gcard tapper-card" data-go="tap"><span class="ic">💗</span><h3>Котик-тапалка</h3><p>Кликай, прокачивай и открывай новые облики</p></div>
           <div class="card gcard" data-go="slots"><span class="ic">🎰</span><h3>Слоты</h3><p>Нажми и крути барабаны</p></div>
@@ -428,5 +433,6 @@
 <script src="script.js?v=11"></script>
 <script src="master.js?v=2"></script>
 <script src="ultimate.js?v=2"></script>
+<script src="engagement.js?v=1"></script>
 </body>
 </html>
