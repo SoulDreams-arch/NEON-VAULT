@@ -545,36 +545,21 @@ let topMode=0;
     b.onclick=()=>{topMode=i;$$('#topTabs button').forEach(x=>x.classList.toggle('on',x===b));renderTop()};t.appendChild(b)});
 })();
 function renderTop(){
-  if(!me)return;sync();accounts[me.id]=me;
-  const m=TOP_MODES[topMode],list=Object.values(accounts).filter(ranked)
-    .sort((a,b)=>m.v(b)-m.v(a)||b.best-a.best||b.coins-a.coins||a.name.localeCompare(b.name,'ru'));
-  const box=$('#topList'),note=$('#topNote');box.innerHTML='';note.innerHTML='';
-  const pos=list.findIndex(a=>a.id===me.id);
-  const msg=document.createElement('div');msg.className='tnote';
-  if(me.type==='guest'){
-    msg.textContent='Ты играешь как гость — в таблице тебя нет. Задай пароль в профиле, и аккаунт попадёт в рейтинг вместе со всем прогрессом.';
-    const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='🔒 Создать пароль';b.onclick=e=>go('profile',e);
-    note.append(msg,b);
-  }else{
-    msg.textContent=pos>=0?`Твоё место: #${pos+1} из ${list.length} · ${m.ic} ${m.v(me).toLocaleString('ru')}`:'';
-    note.append(msg);
-  }
-  if(!list.length){const e=document.createElement('div');e.className='empty';e.textContent='Пока в таблице никого. Зарегистрируйся — и стань первым!';box.appendChild(e);return}
-  list.slice(0,50).forEach((a,i)=>{
-    const r=document.createElement('div');r.className='frow trow'+(a.id===me.id?' me':'')+(i<3?' p'+(i+1):'');r.style.setProperty('--k',i);
-    const rk=document.createElement('div');rk.className='rk';rk.textContent=i<3?['🥇','🥈','🥉'][i]:'#'+(i+1);
-    const av=document.createElement('div');av.className='av';setAvEl(av,a.av);
-    const dot=document.createElement('i');dot.className='dot'+(isOnline(a)?' on':'');av.appendChild(dot);
-    const fi=document.createElement('div');fi.className='fi';
-    const top=document.createElement('div');top.className='ftop';
-    const n=document.createElement('b');n.textContent=a.name;n.className='fx-'+a.fx;n.style.setProperty('--nc',a.nc);top.appendChild(n);
-    if(a.id===me.id){const y=document.createElement('span');y.className='tag';y.textContent='ты';top.appendChild(y)}if(i===0){const y=document.createElement('span');y.className='role-tag';y.textContent='🏆 TOP 1';top.appendChild(y)}else if(i<5){const y=document.createElement('span');y.className='role-tag';y.textContent='TOP '+(i+1);top.appendChild(y)}
-    const s=document.createElement('small');s.textContent=`🏆 макс. выигрыш: ${a.best.toLocaleString('ru')} · 🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games}`;
-    fi.append(top,tagsRow(a),s);
-    const v=document.createElement('div');v.className='tv';v.textContent=m.v(a).toLocaleString('ru');
-    const vl=document.createElement('span');vl.textContent=m.n;v.appendChild(vl);
-    r.append(rk,av,fi,v);box.appendChild(r);
-  });
+  const box=$('#topList'),note=$('#topNote');if(!box||!note)return;
+  const mode=TOP_MODES[topMode]||TOP_MODES[0];
+  const metric=mode.k==='coins'?'coins':mode.k==='best'?'best':mode.k==='games'?'games':'won';
+  const selector=$('#serverTopMetric');if(selector)selector.value=metric;
+  box.innerHTML='<div class="empty-state">Загружаем общий рейтинг…</div>';note.innerHTML='';
+  if(typeof window.loadVaultServerTop==='function'){
+    window.loadVaultServerTop().then(()=>{
+      const serverBox=$('#serverTopList');if(!serverBox)return;
+      box.innerHTML=serverBox.innerHTML;
+      const myName=String(me?.name||'').toLocaleLowerCase('ru');
+      const rows=[...box.querySelectorAll('.server-top-row')];
+      const pos=rows.findIndex(r=>r.querySelector('.server-top-player b')?.textContent?.toLocaleLowerCase('ru')===myName);
+      const msg=document.createElement('div');msg.className='tnote';msg.textContent=pos>=0?`Твоё место: #${pos+1} · ${mode.n}`:'Общий рейтинг сервера для всех пользователей.';note.append(msg);
+    }).catch(()=>{box.innerHTML='<div class="empty-state">Не удалось загрузить общий рейтинг. Проверь подключение к серверу.</div>'});
+  }else box.innerHTML='<div class="empty-state">Серверный рейтинг недоступен.</div>';
 }
 
 /* ---------- Пожертвования ---------- */
@@ -940,14 +925,29 @@ setInterval(()=>{if(me&&me.tapIdle>0){me.tapCurrency+=me.tapIdle;me.tapLast=Date
 /* ---------- Панель владельца (локальная версия) ---------- */
 async function renderAdmin(){
  if(!me||!isStaff()){$('#adminNav').hidden=true;return}$('#adminNav').hidden=false;const delBtn=$('#adminDeleteUserBtn');if(delBtn)delBtn.hidden=!me.owner;
- if(API_ON){try{const d=await api('/admin/overview');$('#adminUsers').textContent=d.users??0;$('#adminCoins').textContent=(d.coins||0).toLocaleString('ru');$('#adminHearts').textContent=(d.hearts||0).toLocaleString('ru');}catch(e){toast(e.message);return}}
- const all=Object.values(sync());const sel=$('#adminUser'),old=sel.value;sel.innerHTML='';all.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+' ('+(+a.coins||0)+' 🪙)'+(a.status==='banned'?' · БАН':'');sel.appendChild(o)});if(old)sel.value=old;
- const box=$('#adminUserList');if(box){box.innerHTML='';all.slice(0,50).forEach(a=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=a.name+' · '+(a.role==='owner'?'Владелец':a.role==='moderator'?'Модератор':'Игрок')+' · '+(a.status==='banned'?'Заблокирован':'Активен');row.appendChild(label);box.appendChild(row)})}
+ if(API_ON){try{const d=await api('/admin/overview');$('#adminUsers').textContent=d.users??0;$('#adminCoins').textContent=(d.coins||0).toLocaleString('ru');$('#adminHearts').textContent=(d.hearts||0).toLocaleString('ru');const ud=await api('/admin/users');window.__nvAdminUsers=Array.isArray(ud.users)?ud.users:[];}catch(e){toast(e.message);return}}
+ const all=API_ON?(window.__nvAdminUsers||Object.values(sync())):Object.values(sync());const sel=$('#adminUser'),old=sel.value;sel.innerHTML='';all.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+' ('+(+a.coins||0)+' 🪙)'+(a.status==='banned'?' · БАН':'');sel.appendChild(o)});if(old)sel.value=old;
+ const box=$('#adminUserList');if(box){box.innerHTML='';const list=API_ON?(window.__nvAdminUsers||all):all;list.forEach(a=>{const row=document.createElement('button');row.type='button';row.className='admin-user-row admin-user-select';row.dataset.playerId=a.id;const label=document.createElement('span');label.textContent=a.name+' · '+(a.role==='owner'?'Владелец':a.role==='moderator'?'Модератор':'Игрок')+' · '+(a.status==='banned'?'Заблокирован':'Активен');const balance=document.createElement('span');balance.className='admin-user-balances';balance.textContent=(Number(a.coins)||0).toLocaleString('ru')+' 🪙 · '+(Number(a.tapCurrency)||0).toLocaleString('ru')+' 💗';row.append(label,balance);row.addEventListener('click',()=>openModeratorPlayer(a));box.appendChild(row)})}
 }
+function openModeratorPlayer(a){
+ if(!a||!isStaff())return;const old=document.getElementById('nvModeratorModal');if(old)old.remove();const modal=document.createElement('div');modal.id='nvModeratorModal';modal.className='nv-mod-overlay';
+ const card=document.createElement('section');card.className='nv-mod-card';const close=document.createElement('button');close.className='btn ghost nv-mod-close';close.textContent='✕';close.onclick=()=>modal.remove();
+ const title=document.createElement('h2');title.textContent='🛡 Модерация игрока';const name=document.createElement('h3');name.textContent=a.name;const stats=document.createElement('div');stats.className='nv-mod-stats';stats.innerHTML='<div><small>Монеты</small><b>'+ (Number(a.coins)||0).toLocaleString('ru')+'</b></div><div><small>Сердечки</small><b>'+ (Number(a.tapCurrency)||0).toLocaleString('ru')+'</b></div><div><small>Статус</small><b>'+(a.status==='banned'?'Заблокирован':'Активен')+'</b></div>';
+ const hint=document.createElement('p');hint.className='sub';hint.textContent='Баланс обновляется с сервера каждые 10 минут. Для немедленного обновления нажми «Обновить данные».';
+ const actions=document.createElement('div');actions.className='nv-mod-actions';
+ const refresh=document.createElement('button');refresh.className='btn';refresh.textContent='Обновить данные';refresh.onclick=async()=>{try{await refreshServerUsers();await renderAdmin();const found=(window.__nvAdminUsers||Object.values(sync())).find(x=>x.id===a.id);if(found){modal.remove();openModeratorPlayer(found)}else toast('Игрок не найден')}catch(e){toast(e.message)}};
+ const ban=document.createElement('button');ban.className='btn ghost';ban.textContent=a.status==='banned'?'Разблокировать':'Заблокировать';ban.onclick=async()=>{if(!API_ON)return toast('Действие доступно в серверной версии');try{await api('/admin/users/'+encodeURIComponent(a.id)+'/status',{method:'PATCH',body:JSON.stringify({status:a.status==='banned'?'active':'banned'})});toast('Статус изменён');await refreshServerUsers();await renderAdmin();modal.remove()}catch(e){toast(e.message)}};
+ const premium=document.createElement('button');premium.className='btn';premium.textContent='Выдать Premium';premium.onclick=()=>{const sel=$('#adminUser');if(sel)sel.value=a.id;modal.remove();$('#adminPremiumDays')?.scrollIntoView({behavior:'smooth',block:'center'});$('#adminPremiumDays')?.focus()};
+ actions.append(refresh,ban,premium);card.append(close,title,name,stats,hint,actions);modal.append(card);modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});document.body.append(modal);
+}
+// Staff balance snapshot refresh: server is the source of truth; never trust another browser's local cache.
+let nvStaffRefreshBusy=false;async function refreshStaffBalances(){if(!me||!isStaff()||!API_ON||nvStaffRefreshBusy)return;nvStaffRefreshBusy=true;try{const d=await api('/admin/users');window.__nvAdminUsers=Array.isArray(d.users)?d.users:[];if(curView==='admin')await renderAdmin();}catch(e){console.warn('Не удалось обновить балансы модерации',e)}finally{nvStaffRefreshBusy=false}}
+setInterval(refreshStaffBalances,10*60*1000);
+
 async function adminGrant(field){if(!me||!isStaff())return toast('Нет доступа');const id=$('#adminUser').value,n=Math.floor(+(field==='coins'?$('#adminGrant').value:$('#adminGrantHearts').value));if(!id||!(n>0))return toast('Выбери аккаунт и укажи сумму');if(API_ON){try{await api('/admin/users/'+encodeURIComponent(id)+'/grant',{method:'POST',body:JSON.stringify({field,amount:n})});await refreshServerUsers();if(id===me.id){const mine=await api('/auth/me');me=hydrateServerUser(mine.user);const all=LS.get('nv_acc',{});all[me.id]=me;LS.set('nv_acc',all);updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru')+(field==='coins'?' 🪙':' 💗'));return}catch(e){return toast(e.message)}}const all=sync(),a=all[id];if(!a)return toast('Аккаунт не найден');a[field]=(+(a[field])||0)+n;LS.set('nv_acc',all);accounts=all;if(id===me.id){me=a;updBal()}renderAdmin();toast('Начислено '+n.toLocaleString('ru'))}
 $('#adminGrantBtn').onclick=()=>adminGrant('coins');
 $('#adminGrantHeartsBtn')?.addEventListener('click',()=>adminGrant('tapCurrency'));
-$('#adminSearchBtn')?.addEventListener('click',async()=>{if(!isStaff())return;if(!API_ON)return renderAdmin();try{const d=await api('/admin/users?q='+encodeURIComponent($('#adminSearch').value));const box=$('#adminUserList');box.innerHTML='';d.users.forEach(a=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=`${a.name} · ${a.coins} 🪙 · ${a.status==='banned'?'Блок':'Активен'}`;const ban=document.createElement('button');ban.className='btn ghost';ban.textContent=a.status==='banned'?'Разблокировать':'Заблокировать';ban.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/status',{method:'PATCH',body:JSON.stringify({status:a.status==='banned'?'active':'banned'})});toast('Статус аккаунта изменён');renderAdmin()}catch(e){toast(e.message)}};const role=document.createElement('button');role.className='btn ghost';role.textContent='Модератор';role.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/role',{method:'PATCH',body:JSON.stringify({role:'moderator'})});toast('Роль обновлена');renderAdmin()}catch(e){toast(e.message)}};if(me.owner)row.append(label,ban,role);else row.append(label,ban);box.appendChild(row)})}catch(e){toast(e.message)}});
+$('#adminSearchBtn')?.addEventListener('click',async()=>{if(!isStaff())return;if(!API_ON)return renderAdmin();try{const d=await api('/admin/users?q='+encodeURIComponent($('#adminSearch').value));window.__nvAdminUsers=d.users||[];const box=$('#adminUserList');box.innerHTML='';d.users.forEach(a=>{const row=document.createElement('div');row.className='admin-user-row';const label=document.createElement('span');label.textContent=`${a.name} · ${a.coins} 🪙 · ${a.status==='banned'?'Блок':'Активен'}`;const ban=document.createElement('button');ban.className='btn ghost';ban.textContent=a.status==='banned'?'Разблокировать':'Заблокировать';ban.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/status',{method:'PATCH',body:JSON.stringify({status:a.status==='banned'?'active':'banned'})});toast('Статус аккаунта изменён');renderAdmin()}catch(e){toast(e.message)}};const role=document.createElement('button');role.className='btn ghost';role.textContent='Модератор';role.onclick=async()=>{try{await api('/admin/users/'+encodeURIComponent(a.id)+'/role',{method:'PATCH',body:JSON.stringify({role:'moderator'})});toast('Роль обновлена');renderAdmin()}catch(e){toast(e.message)}};if(me.owner)row.append(label,ban,role);else row.append(label,ban);box.appendChild(row)})}catch(e){toast(e.message)}});
 $('#adminAuditBtn')?.addEventListener('click',async()=>{if(!isStaff()||!API_ON)return toast('Доступно в серверной версии');try{const d=await api('/admin/audit');const box=$('#adminAudit');box.innerHTML='';d.rows.forEach(x=>{const row=document.createElement('div');row.className='admin-user-row';row.textContent=new Date(x.created_at).toLocaleString('ru')+' · '+x.action+' · '+(x.target_id||'—');box.appendChild(row)})}catch(e){toast(e.message)}});
 $('#ownerDeactivate').onclick=async()=>{if(!me||!me.owner)return;if(API_ON){try{await api('/admin/deactivate-owner',{method:'POST'});me.owner=false;me.creator=false;me.role='user'}catch(e){return toast(e.message)}}else{me.owner=false;me.creator=false}me.tags=me.tags.filter(id=>TAG_BY[id]&&TAG_BY[id].g!=='creator');save();$('#adminNav').hidden=true;go('lobby');render();toast('Статус владельца снят')};
 
@@ -1160,14 +1160,33 @@ $('#spinS').onclick=async()=>{
  }catch(e){toast(e.message)}finally{busy=false;btn.disabled=false}
 };
 $('#spinW').onclick=async()=>{
- if(!API_ON)return legacySpinW?.();if(busy)return;busy=true;$('#spinW').disabled=true;
- try{const d=await serverPlay('wheel');$('#resW').className='res '+(d.win?'win':'lose');$('#resW').textContent=`Колесо ×${d.details.multiplier} · ${d.win?'выигрыш '+d.win.toLocaleString('ru'):'не повезло'}`;if(d.details.multiplier>=10)toast('🏆 Джекпот колеса!')}
- catch(e){toast(e.message)}finally{busy=false;$('#spinW').disabled=false}
+ if(!API_ON)return legacySpinW?.();if(busy)return;busy=true;const btn=$('#spinW'),w=$('#wheel');btn.disabled=true;
+ try{
+  const d=await serverPlay('wheel');
+  const multiplier=Number(d.details.multiplier)||0;
+  const sectors=[0,.5,1,1.5,2,4,10];
+  // Align the visual wheel with the server-authoritative outcome; repeat labels are allowed.
+  const idx=multiplier===10?6:multiplier===4?5:multiplier===2?4:multiplier===1.5?3:multiplier===1?2:multiplier===.5?1:0;
+  const target=idx*360/7+360*6;
+  const current=((rot%360)+360)%360;rot+=360*6+((target%360-current+360)%360);
+  w.style.transition='none';w.style.transform=`rotate(${current}deg)`;void w.offsetWidth;
+  w.style.transition='transform 4.8s cubic-bezier(.12,.72,.08,1)';w.style.transform=`rotate(${rot}deg)`;
+  await sleep(4950);
+  $('#resW').className='res '+(d.win?'win':'lose');$('#resW').textContent=`Колесо ×${multiplier} · ${d.win?'выигрыш '+d.win.toLocaleString('ru'):'не повезло'}`;
+  if(multiplier>=10)toast('🏆 Джекпот колеса!');
+ }catch(e){toast(e.message)}finally{busy=false;btn.disabled=false}
 };
 $('#spinC').onclick=async()=>{
- if(!API_ON)return legacySpinC?.();if(busy)return;busy=true;$('#spinC').disabled=true;
- try{const d=await serverPlay('coin',side);$('#resC').className='res '+(d.win?'win':'lose');$('#resC').textContent=(d.details.resultSide===0?'Выпал орёл 🦅':'Выпала решка 🌙')+' · '+(d.win?'+'+d.win.toLocaleString('ru')+' 🪙':'Ставка проиграна')}
- catch(e){toast(e.message)}finally{busy=false;$('#spinC').disabled=false}
+ if(!API_ON)return legacySpinC?.();if(busy)return;busy=true;const btn=$('#spinC'),coin=$('#coin3d'),wrap=$('#coinWrap');btn.disabled=true;
+ try{
+  const d=await serverPlay('coin',side),resultSide=Number(d.details.resultSide)||0;
+  const startY=((crot%360)+360)%360,finalY=startY+1800+((resultSide*180-startY%360+360)%360);
+  coin.style.transition='none';coin.style.transform=`rotateY(${startY}deg)`;void coin.offsetWidth;
+  wrap.classList.remove('toss');void wrap.offsetWidth;wrap.classList.add('toss');
+  coin.style.transition='transform 1.9s cubic-bezier(.16,.78,.18,1)';coin.style.transform=`rotateY(${finalY}deg)`;crot=finalY;
+  await sleep(1950);wrap.classList.remove('toss');
+  $('#resC').className='res '+(d.win?'win':'lose');$('#resC').textContent=(resultSide===0?'Выпал орёл 🦅':'Выпала решка 🌙')+' · '+(d.win?'+'+d.win.toLocaleString('ru')+' 🪙':'Ставка проиграна');
+ }catch(e){toast(e.message)}finally{busy=false;btn.disabled=false}
 };
 function refreshBetLimitHint(){
  const bal=Number(me?.coins)||0,max=bal>=10000?Math.floor(bal/2):Math.min(bal,1000);
