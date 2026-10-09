@@ -744,7 +744,7 @@ async function go(id,ev){
   const to=$('#v-'+id);
   await transition(()=>{
     $('#v-'+curView).classList.remove('active','pop');to.classList.add('active');to.scrollTop=0;curView=id;
-    if(['slots','wheel','coin'].includes(id)){const c=document.querySelector('#v-games .global-chat-card');const target=document.querySelector('#v-'+id+' .game-chat-side');if(c&&target)target.appendChild(c)}if(id==='friends')renderFriends();if(id==='messenger')renderMessenger();if(id==='lobby')renderLobbyCommunity();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='evolution'){renderTapper();renderEvolutionScreen()}if(id==='admin'){if(!isStaff()){toast('Нет доступа');navBusy=false;return}renderAdmin()}
+    if(['slots','wheel','coin'].includes(id)){const c=document.querySelector('#v-games .global-chat-card');const target=document.querySelector('#v-'+id+' .game-chat-side');if(c&&target)target.appendChild(c)}if(id==='progress'&&window.renderMasterProgress)window.renderMasterProgress();if(id==='friends')renderFriends();if(id==='messenger')renderMessenger();if(id==='lobby')renderLobbyCommunity();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();if(id==='tap')renderTapper();if(id==='evolution'){renderTapper();renderEvolutionScreen()}if(id==='admin'){if(!isStaff()){toast('Нет доступа');navBusy=false;return}renderAdmin()}
   },()=>popIn(to),ev);
   navBusy=false;
 }
