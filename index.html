@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
@@ -86,7 +86,16 @@
           <div class="card gcard" data-go="wheel"><span class="ic">🎡</span><h3>Колесо</h3><p>Раскрути и жди удачу</p></div>
           <div class="card gcard" data-go="coin"><span class="ic">🪙</span><h3>Монетка</h3><p>Орёл или решка</p></div>
         </div>
-        <p class="disc">⚠️ Игровая валюта не имеет реальной стоимости и не выводится. Это демонстрация оформления.</p>
+        <div class="card donate" id="donate">
+          <div class="dn-head"><span class="dn-ic">💜</span>
+            <div><h3 class="orb">Поддержать автора</h3>
+            <p>Сайт делается одним человеком. Пожертвования идут на продвижение: реклама, домен и хостинг. Это добровольно: на игру донат не влияет, монеты за него не выдаются.</p></div>
+          </div>
+          <div id="dnGoal"></div>
+          <div class="dn-grid" id="dnGrid"></div>
+          <div class="dn-hint" id="dnHint"></div>
+        </div>
+        <p class="disc">⚠️ Игровая валюта не имеет реальной стоимости и не выводится. Пожертвования автору — отдельно и в реальных деньгах, на игровой баланс они не влияют.</p>
       </section>
 
       <!-- СЛОТЫ -->
@@ -137,13 +146,26 @@
         </div>
       </section>
 
+      <!-- ЛИДЕРБОРД -->
+      <section class="view" id="v-top">
+        <div class="card fhead">
+          <h1 class="orb">🏆 Лидерборд</h1>
+          <p class="sub" style="margin-bottom:16px">В таблице только зарегистрированные игроки и гости, которые задали пароль для своего аккаунта</p>
+          <div class="seg" id="topTabs"></div>
+        </div>
+        <div class="card panel" style="margin-top:18px">
+          <div id="topNote" class="topnote"></div>
+          <div class="flist top" id="topList"></div>
+        </div>
+      </section>
+
       <!-- ПРОФИЛЬ -->
       <section class="view" id="v-profile">
         <div class="card pwrap">
           <div class="banner" id="banner"></div>
           <div class="phead">
             <div class="av big" id="bigAv"></div>
-            <div><div class="nick" id="bigNick"></div><div id="mail" style="font-size:13px;color:#a5a3c4"></div></div>
+            <div><div class="nick" id="bigNick"></div><div id="mail" style="font-size:13px;color:#a5a3c4"></div><div class="tgs" id="bigTags" style="margin-top:8px"></div></div>
           </div>
           <div class="stats">
             <div class="stat"><b id="stC">0</b><span>Монеты</span></div>
@@ -171,6 +193,10 @@
             <div class="swatches" id="sws"></div>
             <div class="row" style="margin-top:14px"><input type="color" id="bgCol"><label class="btn ghost" style="cursor:pointer">📁 Своя картинка<input type="file" id="bgFile" accept="image/*" hidden></label></div>
           </div>
+          <div class="card panel" style="grid-column:1/-1" id="tagPanel">
+            <h3>🏷 Теги</h3>
+            <div id="tagBody"></div>
+          </div>
           <div class="card panel" style="grid-column:1/-1" id="secPanel">
             <h3>🔒 Безопасность</h3>
             <div id="secBody"></div>
@@ -187,6 +213,7 @@
     <button class="nbtn" data-view="slots"><em>🎰</em>Слоты</button>
     <button class="nbtn" data-view="wheel"><em>🎡</em>Колесо</button>
     <button class="nbtn" data-view="coin"><em>🪙</em>Монетка</button>
+    <button class="nbtn" data-view="top"><em>🏆</em>Топ</button>
     <button class="nbtn" data-view="friends"><em>👥</em>Друзья</button>
     <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
   </nav>
@@ -195,6 +222,6 @@
 <div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
 <div id="toast"></div>
 
-<script src="script.js?v=4"></script>
+<script src="script.js?v=5"></script>
 </body>
 </html>

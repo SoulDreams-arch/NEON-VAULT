@@ -6,6 +6,25 @@
    4) Скопируй Client ID (вида 123-abc.apps.googleusercontent.com) в кавычки ниже.
    Пока поле пустое — кнопка Google показывает подсказку, остальной вход работает. */
 const GOOGLE_CLIENT_ID = '';
+
+/* Статус «Создатель» открывает теги, доступные только создателям.
+   Вводится в Профиль → Теги → «Я создатель сайта». В файле хранится только хэш, сам код — нет.
+   Свой код: в консоли браузера (F12) выполни:
+     (async()=>{const c='ТВОЙ_КОД',s=crypto.randomUUID().replace(/-/g,'');
+     const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(c),'PBKDF2',false,['deriveBits']);
+     const h=[...new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(s),iterations:150000,hash:'SHA-256'},k,256))].map(b=>b.toString(16).padStart(2,'0')).join('');
+     console.log({s,h})})()
+   и подставь s и h ниже. */
+const CREATOR = { s:'9e12c1d9a105cb46a8c1da3c5bb01b1d', h:'a5e49f68f6853b04203ebb1a27e454fd32e8508980f358d94748087e78d46c1a' };
+
+/* Пожертвования автору (блок внизу лобби). Пока пусто — блок покажет подсказку.
+   links: кнопки-ссылки (только https://), requisites: реквизиты с кнопкой «копировать».
+   goal*: необязательная цель сбора — заполняй сам и обновляй вручную. */
+const DONATE = {
+  links: [ /* { label:'DonationAlerts', url:'https://www.donationalerts.com/r/ТВОЙ_НИК' }, { label:'Boosty', url:'https://boosty.to/ТВОЙ_НИК' } */ ],
+  requisites: [ /* { label:'Карта', value:'0000 0000 0000 0000' }, { label:'USDT (TRC20)', value:'T...' } */ ],
+  goalTitle: '', goalTarget: 0, goalCurrent: 0, goalUnit: '₽'
+};
 /* =================================== */
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -24,6 +43,8 @@ let accounts={}, me=null, bet=50, busy=false, side=0, curView='lobby', navBusy=f
 function norm(a){
   if(!a.type)a.type=a.id.startsWith('g_')?'google':a.id.startsWith('guest_')?'guest':'user';
   if(!Array.isArray(a.friends))a.friends=[];
+  if(!Array.isArray(a.tags))a.tags=[];
+  a.creator=a.creator===true;
   if(!a.seen)a.seen=Date.now();
   if(!a.created)a.created=a.seen;
   return a;
@@ -57,7 +78,7 @@ function uniqueName(base){
 }
 const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const newAcc=(id,type,name)=>({id,type,name,email:null,av:{t:'emoji',v:pick(EMOJI)},bg:{t:'grad',v:0},accent:'#a855f7',fx:'neon',nc:'#ffffff',
-  coins:1000,games:0,won:0,best:0,bonusAt:0,friends:[],seen:Date.now(),on:false,created:Date.now()});
+  coins:1000,games:0,won:0,best:0,bonusAt:0,friends:[],tags:[],creator:false,seen:Date.now(),on:false,created:Date.now()});
 
 /* ---------- Пароли (PBKDF2 + соль, в открытом виде не хранятся) ---------- */
 const hex=u=>[...new Uint8Array(u)].map(b=>b.toString(16).padStart(2,'0')).join('');
@@ -216,6 +237,7 @@ addEventListener('storage',e=>{
   if(e.key!=='nv_acc'||!me)return;
   sync();const f=accounts[me.id];if(f){me=f;updBal(true)}
   if(curView==='friends')renderFriends();
+  if(curView==='top')renderTop();
 });
 
 /* ---------- Отрисовка профиля ---------- */
@@ -226,6 +248,105 @@ function setAvEl(el,av){
 const setAv=el=>setAvEl(el,me.av);
 function bgCss(){const b=me.bg;return b.t==='grad'?GRADS[b.v]:b.t==='color'?b.v:`url("${String(b.v).replace(/"/g,'%22')}") center/cover`}
 const TYPE_LBL={guest:'Гость',user:'Аккаунт',google:'Google'};
+
+/* ---------- Теги ----------
+   rank    — по лучшему (максимальному) выигрышу, открываются по возрастанию
+   fun     — для души, ставит любой
+   earn    — за достижения
+   creator — ТОЛЬКО для создателей: не показываются и не ставятся остальным */
+const MAX_TAGS=3;
+const TIERS=[['🌱','Новичок',0],['✨','Искра',100],['🍀','Везунчик',500],['🎯','Игрок',2000],['💎','Хайроллер',10000],['🏆','Легенда',50000]];
+const TAGS=[
+  ...TIERS.map(([ic,n,min],i)=>({id:'r'+i,g:'rank',ic,n,c:['#a5a3c4','#7dd3fc','#86efac','#fcd34d','#22d3ee','#f0abfc'][i],
+    need:a=>a.best>=min,hint:min?`Макс. выигрыш от ${min.toLocaleString('ru')}`:''})),
+  {id:'f1',g:'fun',ic:'🍀',n:'На удачу',c:'#86efac'},{id:'f2',g:'fun',ic:'🎰',n:'Слотоман',c:'#f0abfc'},
+  {id:'f3',g:'fun',ic:'🎡',n:'Колесничий',c:'#fcd34d'},{id:'f4',g:'fun',ic:'🪙',n:'Орёл или решка',c:'#fbbf24'},
+  {id:'f5',g:'fun',ic:'😎',n:'Холодная голова',c:'#7dd3fc'},{id:'f6',g:'fun',ic:'😈',n:'Рисковый',c:'#fb7185'},
+  {id:'f7',g:'fun',ic:'🐢',n:'Осторожный',c:'#4ade80'},{id:'f8',g:'fun',ic:'🌙',n:'Ночная смена',c:'#a78bfa'},
+  {id:'f9',g:'fun',ic:'🧠',n:'Считаю шансы',c:'#38bdf8'},
+  {id:'e1',g:'earn',ic:'🔥',n:'Завсегдатай',c:'#fb923c',need:a=>a.games>=50,hint:'Сыграй 50 игр'},
+  {id:'e2',g:'earn',ic:'🏅',n:'Ветеран',c:'#facc15',need:a=>a.games>=250,hint:'Сыграй 250 игр'},
+  {id:'e3',g:'earn',ic:'💰',n:'Богач',c:'#fbbf24',need:a=>a.coins>=10000,hint:'Накопи 10 000 монет'},
+  {id:'e4',g:'earn',ic:'🏦',n:'Золотой запас',c:'#fde68a',need:a=>a.coins>=50000,hint:'Накопи 50 000 монет'},
+  {id:'e5',g:'earn',ic:'🤝',n:'Душа компании',c:'#f472b6',need:a=>a.friends.length>=3,hint:'Заведи 3 друзей'},
+  {id:'c1',g:'creator',ic:'👑',n:'Создатель',c:'#fbbf24'},{id:'c2',g:'creator',ic:'🛠',n:'Архитектор',c:'#22d3ee'},
+  {id:'c3',g:'creator',ic:'⚡',n:'Хозяин хранилища',c:'#c084fc'},{id:'c4',g:'creator',ic:'🌟',n:'Основатель',c:'#fde68a'}
+];
+const TAG_BY=Object.fromEntries(TAGS.map(t=>[t.id,t]));
+const TAG_GROUPS=[['rank','🏆 По максимальному выигрышу'],['fun','🎭 Для души'],['earn','🎖 За достижения'],['creator','👑 Только для создателей']];
+const tagOpen=(a,t)=>t.g==='creator'?a.creator===true:!t.need||t.need(a);
+const topTier=a=>TAG_BY['r'+TIERS.reduce((m,t,i)=>a.best>=t[2]?i:m,0)];
+/* что видят другие: создательские теги — только у создателей, остальные — только если открыты */
+function shownTags(a){
+  const list=(a.tags||[]).map(id=>TAG_BY[id]).filter(t=>t&&tagOpen(a,t)).slice(0,MAX_TAGS).sort((x,y)=>(y.g==='creator')-(x.g==='creator'));
+  if(!list.some(t=>t.g!=='creator'))list.push(topTier(a));
+  return list;
+}
+function tagEl(t){const s=document.createElement('span');s.className='tg'+(t.g==='creator'?' crt':'');s.style.setProperty('--tc',t.c);s.textContent=t.ic+' '+t.n;return s}
+function tagsRow(a){const d=document.createElement('div');d.className='tgs';shownTags(a).forEach(t=>d.appendChild(tagEl(t)));return d}
+
+function renderTags(){
+  const box=$('#tagBody');box.innerHTML='';
+  const eq=me.tags.filter(id=>TAG_BY[id]&&tagOpen(me,TAG_BY[id]));
+  const info=document.createElement('p');info.className='secp';
+  info.textContent=`Выбрано ${eq.length} из ${MAX_TAGS}. Теги видят все — в друзьях, профиле и лидерборде. Если ничего не выбрано, показывается твой ранг по максимальному выигрышу (сейчас: ${me.best.toLocaleString('ru')}).`;
+  box.appendChild(info);
+  TAG_GROUPS.forEach(([g,title])=>{
+    if(g==='creator'&&!me.creator)return;           /* остальным этот раздел не показывается вообще */
+    const h=document.createElement('div');h.className='tgh';h.textContent=title;box.appendChild(h);
+    const row=document.createElement('div');row.className='tpick';
+    TAGS.filter(t=>t.g===g).forEach(t=>{
+      const open=tagOpen(me,t),on=eq.includes(t.id);
+      const b=document.createElement('button');b.type='button';b.className='tpb'+(on?' on':'')+(open?'':' lk')+(g==='creator'?' crt':'');
+      b.style.setProperty('--tc',t.c);
+      b.textContent=(open?t.ic:'🔒')+' '+t.n;
+      if(!open)b.title=t.hint||'Недоступно';
+      b.onclick=()=>{
+        if(!open)return toast('🔒 '+(t.hint||'Тег пока недоступен'));
+        const cur=me.tags.filter(id=>TAG_BY[id]&&tagOpen(me,TAG_BY[id]));
+        if(cur.includes(t.id))me.tags=cur.filter(x=>x!==t.id);
+        else{if(cur.length>=MAX_TAGS)return toast(`Можно максимум ${MAX_TAGS} тега — сними один`);me.tags=[...cur,t.id]}
+        save();render();
+      };
+      row.appendChild(b);
+      if(!open&&t.hint){const s=document.createElement('small');s.className='tpn';s.textContent=t.hint;b.appendChild(s)}
+    });
+    box.appendChild(row);
+  });
+  /* статус создателя */
+  const foot=document.createElement('div');foot.className='tfoot';
+  if(me.creator){
+    const p=document.createElement('p');p.className='secp';p.textContent='👑 Ты создатель сайта — тебе доступны теги создателей.';
+    const r=document.createElement('button');r.type='button';r.className='btn ghost';r.textContent='Снять статус создателя';
+    r.onclick=async()=>{if(!(await ask('Снять статус создателя?','Теги создателей пропадут. Вернуть их можно, снова введя код.','Снять','Отмена')))return;
+      me.creator=false;me.tags=me.tags.filter(id=>TAG_BY[id]&&TAG_BY[id].g!=='creator');save();render();toast('Статус создателя снят')};
+    foot.append(p,r);
+  }else{
+    const d=document.createElement('details');d.className='cdet';
+    const s=document.createElement('summary');s.textContent='🔑 Я создатель сайта';
+    const row=document.createElement('div');row.className='row';row.style.marginTop='10px';
+    const i=document.createElement('input');i.className='inp';i.type='password';i.placeholder='Код создателя';i.autocomplete='off';i.style.cssText='flex:1;min-width:180px;margin:0';
+    const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Подтвердить';
+    const go=async()=>{if(b.disabled)return;b.disabled=true;try{await claimCreator(i.value)}finally{b.disabled=false}};
+    b.onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};
+    row.append(i,b);d.append(s,row);foot.appendChild(d);
+  }
+  box.appendChild(foot);
+}
+async function claimCreator(code){
+  code=String(code).trim();
+  if(!code)return toast('Введи код');
+  if(me.type==='guest')return toast('Сначала создай пароль в разделе «Безопасность» — статус создателя только для настоящих аккаунтов');
+  if(!CREATOR.h)return toast('Код создателя не задан в script.js');
+  if(!(window.crypto&&crypto.subtle))return toast('Для проверки кода открой сайт по https');
+  const k='creator',left=lockLeft(k);
+  if(left)return toast(`Слишком много попыток. Подожди ${left} с`);
+  let ok=false;try{ok=await hashPw(code,CREATOR.s,'pbkdf2')===CREATOR.h}catch{}
+  if(!ok){const n=addFail(k);return toast(n>=5?`Слишком много попыток. Подожди ${lockLeft(k)} с`:'Неверный код')}
+  clearFail(k);me.creator=true;if(!me.tags.includes('c1'))me.tags=['c1',...me.tags].slice(0,MAX_TAGS);
+  save();render();rain();toast('👑 Добро пожаловать, создатель!');
+}
+
 function render(){
   document.documentElement.style.setProperty('--accent',me.accent);
   setAv($('#miniAv'));setAv($('#bigAv'));
@@ -236,7 +357,8 @@ function render(){
   $('#nickIn').value=me.name;$('#fxSel').value=me.fx;$('#nickCol').value=me.nc;$('#accCol').value=me.accent;
   $$('#emo button').forEach(b=>b.classList.toggle('on',me.av.t==='emoji'&&b.textContent===me.av.v));
   $$('#sws .sw').forEach((b,i)=>b.classList.toggle('on',me.bg.t==='grad'&&me.bg.v===i));
-  updBal(true);stats();renderSec();
+  const bt=$('#bigTags');bt.replaceChildren(...shownTags(me).map(tagEl));
+  updBal(true);stats();renderSec();renderTags();renderDonate();
 }
 function stats(){$('#stC').textContent=me.coins.toLocaleString('ru');$('#stG').textContent=me.games;$('#stW').textContent=me.won.toLocaleString('ru');$('#stB').textContent=me.best.toLocaleString('ru')}
 function updBal(quiet){$('#balN').textContent=me.coins.toLocaleString('ru');if(!quiet){const b=$('#bal');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}stats()}
@@ -313,7 +435,7 @@ function friendRow(a,k,acts){
   const tag=document.createElement('span');tag.className='tag t-'+a.type;tag.textContent=TYPE_LBL[a.type].toLowerCase();
   top.append(n,tag);
   const m=document.createElement('small');m.textContent=`🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games} · ${isOnline(a)?'в сети':ago(a.seen)}`;
-  fi.append(top,m);r.append(av,fi,...acts);return r;
+  fi.append(top,tagsRow(a),m);r.append(av,fi,...acts);return r;
 }
 function renderFriends(){
   if(!me)return;sync();
@@ -360,7 +482,79 @@ $('#frForm').onsubmit=e=>{
   link(a.id);
 };
 $('#frIn').oninput=()=>renderFriends();
-setInterval(()=>{if(!me)return;me.seen=Date.now();save();if(curView==='friends'&&!$('#frIn').matches(':focus'))renderFriends()},20e3);
+setInterval(()=>{if(!me)return;me.seen=Date.now();save();if(curView==='friends'&&!$('#frIn').matches(':focus'))renderFriends();if(curView==='top')renderTop()},20e3);
+
+/* ---------- Лидерборд ----------
+   В рейтинге только зарегистрированные (ник+пароль или Google) и гости, задавшие пароль
+   (после этого тип аккаунта меняется на «user»). Обычные гости в таблицу не попадают. */
+const ranked=a=>a.type!=='guest';
+const TOP_MODES=[
+  {k:'coins',ic:'🪙',n:'Монеты',v:a=>a.coins},
+  {k:'best',ic:'🏆',n:'Макс. выигрыш',v:a=>a.best},
+  {k:'won',ic:'💸',n:'Всего выиграно',v:a=>a.won},
+  {k:'games',ic:'🎮',n:'Игр сыграно',v:a=>a.games}
+];
+let topMode=0;
+(function(){
+  const t=$('#topTabs');
+  TOP_MODES.forEach((m,i)=>{const b=document.createElement('button');b.type='button';b.className=i?'':'on';b.textContent=m.ic+' '+m.n;
+    b.onclick=()=>{topMode=i;$$('#topTabs button').forEach(x=>x.classList.toggle('on',x===b));renderTop()};t.appendChild(b)});
+})();
+function renderTop(){
+  if(!me)return;sync();accounts[me.id]=me;
+  const m=TOP_MODES[topMode],list=Object.values(accounts).filter(ranked)
+    .sort((a,b)=>m.v(b)-m.v(a)||b.best-a.best||b.coins-a.coins||a.name.localeCompare(b.name,'ru'));
+  const box=$('#topList'),note=$('#topNote');box.innerHTML='';note.innerHTML='';
+  const pos=list.findIndex(a=>a.id===me.id);
+  const msg=document.createElement('div');msg.className='tnote';
+  if(me.type==='guest'){
+    msg.textContent='Ты играешь как гость — в таблице тебя нет. Задай пароль в профиле, и аккаунт попадёт в рейтинг вместе со всем прогрессом.';
+    const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='🔒 Создать пароль';b.onclick=e=>go('profile',e);
+    note.append(msg,b);
+  }else{
+    msg.textContent=pos>=0?`Твоё место: #${pos+1} из ${list.length} · ${m.ic} ${m.v(me).toLocaleString('ru')}`:'';
+    note.append(msg);
+  }
+  if(!list.length){const e=document.createElement('div');e.className='empty';e.textContent='Пока в таблице никого. Зарегистрируйся — и стань первым!';box.appendChild(e);return}
+  list.slice(0,50).forEach((a,i)=>{
+    const r=document.createElement('div');r.className='frow trow'+(a.id===me.id?' me':'')+(i<3?' p'+(i+1):'');r.style.setProperty('--k',i);
+    const rk=document.createElement('div');rk.className='rk';rk.textContent=i<3?['🥇','🥈','🥉'][i]:'#'+(i+1);
+    const av=document.createElement('div');av.className='av';setAvEl(av,a.av);
+    const dot=document.createElement('i');dot.className='dot'+(isOnline(a)?' on':'');av.appendChild(dot);
+    const fi=document.createElement('div');fi.className='fi';
+    const top=document.createElement('div');top.className='ftop';
+    const n=document.createElement('b');n.textContent=a.name;n.className='fx-'+a.fx;n.style.setProperty('--nc',a.nc);top.appendChild(n);
+    if(a.id===me.id){const y=document.createElement('span');y.className='tag';y.textContent='ты';top.appendChild(y)}
+    const s=document.createElement('small');s.textContent=`🏆 макс. выигрыш: ${a.best.toLocaleString('ru')} · 🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games}`;
+    fi.append(top,tagsRow(a),s);
+    const v=document.createElement('div');v.className='tv';v.textContent=m.v(a).toLocaleString('ru');
+    const vl=document.createElement('span');vl.textContent=m.n;v.appendChild(vl);
+    r.append(rk,av,fi,v);box.appendChild(r);
+  });
+}
+
+/* ---------- Пожертвования ---------- */
+function renderDonate(){
+  const g=$('#dnGrid'),h=$('#dnHint'),gl=$('#dnGoal');g.innerHTML='';h.textContent='';gl.innerHTML='';
+  const links=(DONATE.links||[]).filter(l=>l&&l.label&&/^https:\/\//i.test(l.url));
+  const reqs=(DONATE.requisites||[]).filter(r=>r&&r.label&&r.value);
+  links.forEach(l=>{const a=document.createElement('a');a.className='btn gold';a.href=l.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent='💜 '+l.label;g.appendChild(a)});
+  reqs.forEach(r=>{
+    const d=document.createElement('div');d.className='dn-req';
+    const t=document.createElement('div');const s=document.createElement('small');s.textContent=r.label;const v=document.createElement('b');v.textContent=r.value;t.append(s,v);
+    const c=document.createElement('button');c.type='button';c.className='ib';c.title='Скопировать';c.textContent='📋';
+    c.onclick=async()=>{try{await navigator.clipboard.writeText(r.value);toast('Скопировано: '+r.label)}catch{toast('Не удалось скопировать — выдели и скопируй вручную')}};
+    d.append(t,c);g.appendChild(d);
+  });
+  if(!links.length&&!reqs.length)h.textContent=me&&me.creator?'Способы поддержки не добавлены. Открой script.js и заполни константу DONATE (ссылки и реквизиты) — этот блок увидят все игроки.':'Способы поддержки скоро появятся здесь 💜';
+  const T=+DONATE.goalTarget||0;
+  if(T>0){
+    const cur=Math.max(0,+DONATE.goalCurrent||0),p=Math.min(100,Math.round(cur/T*100)),u=DONATE.goalUnit||'';
+    const l=document.createElement('div');l.className='dn-gl';l.textContent=`${DONATE.goalTitle||'Цель сбора'}: ${cur.toLocaleString('ru')} / ${T.toLocaleString('ru')} ${u} (${p}%)`;
+    const bar=document.createElement('div');bar.className='dn-bar';const f=document.createElement('b');f.style.width=p+'%';bar.appendChild(f);
+    gl.append(l,bar);
+  }
+}
 
 /* ---------- Диалог ---------- */
 function ask(t,p,ok='Да',no='Отмена'){
@@ -429,7 +623,7 @@ async function go(id,ev){
   const to=$('#v-'+id);
   await transition(()=>{
     $('#v-'+curView).classList.remove('active','pop');to.classList.add('active');to.scrollTop=0;curView=id;
-    if(id==='friends')renderFriends();if(id==='profile')renderSec();
+    if(id==='friends')renderFriends();if(id==='profile'){renderSec();renderTags()}if(id==='top')renderTop();
   },()=>popIn(to),ev);
   navBusy=false;
 }
