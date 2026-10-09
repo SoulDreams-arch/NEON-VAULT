@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
@@ -67,7 +67,7 @@
   <div id="stage">
     <header class="card">
       <div class="logo"><img src="cat-sticker.webp" alt="" class="header-cat"><span>NEON VAULT</span></div>
-      <div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">🪙</span><span id="balN">0</span></div>
+      <button class="nbtn vault-notify-btn" id="vaultNotifyBtn" type="button" aria-label="Уведомления">🔔 <span id="vaultNotifyCount" hidden>0</span></button><div class="bal" id="bal"><span class="coin-icon" aria-hidden="true">🪙</span><span id="balN">0</span></div>
       <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b><select id="presenceMode" aria-label="Статус" title="Статус" class="presence-select"><option value="online">● В сети</option><option value="busy">◐ Не беспокоить</option><option value="offline">○ Не в сети</option></select></div>
     </header>
 
@@ -77,7 +77,7 @@
         <div class="card hero progress-hero"><div><span class="eyebrow">YOUR JOURNEY</span><h1 class="orb">Твой путь в NEON VAULT</h1><p class="sub">Собирай питомцев, открывай достижения и забирай ежедневные награды.</p></div><div class="progress-level"><span>УРОВЕНЬ</span><b id="progressLevel">1</b><small id="progressXp">0 XP</small></div></div>
         <section class="card panel"><div class="section-title"><div><span class="eyebrow">DAILY ROUTINE</span><h2 class="orb">Задания дня</h2><p class="sub">Награды начисляются сервером и доступны один раз в день.</p></div></div><div id="dailyQuestGrid" class="master-grid"><div class="empty-state">Загружаем задания…</div></div></section>
         <section class="card panel"><div class="section-title"><div><span class="eyebrow">MILESTONES</span><h2 class="orb">Достижения</h2><p class="sub">Новые этапы открываются по мере твоего прогресса.</p></div><span id="achievementCount" class="pill-live">0 ОТКРЫТО</span></div><div id="achievementGrid" class="master-grid"><div class="empty-state">Загружаем достижения…</div></div></section>
-        <section class="card panel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации. Используй этот инструмент только для реальных нарушений.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID аккаунта игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации. Используй этот инструмент только для реальных нарушений.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID или точный ник игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section>
       </section>
       <!-- ЛОББИ -->
       <section class="view active" id="v-lobby">
@@ -204,6 +204,7 @@
           <div class="card panel"><h3>📊 Статистика базы</h3><div class="tap-stats"><div><small>Аккаунтов</small><b id="adminUsers">0</b></div><div><small>Монет у игроков</small><b id="adminCoins">0</b></div><div><small>Всего сердечек</small><b id="adminHearts">0</b></div></div><p class="sub">Данные загружаются с сервера, а не из браузера владельца.</p></div>
           <div class="card panel"><h3>🎁 Управление балансом</h3><p>Выбери аккаунт и выдай игровую валюту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button><button class="btn ghost full" id="adminTakeCoinsBtn" type="button">Снять монеты</button><input class="inp" id="adminGrantHearts" type="number" min="1" step="1" placeholder="Количество сердечек"><button class="btn full" id="adminGrantHeartsBtn" type="button">Начислить сердечки</button><button class="btn ghost full" id="adminTakeHeartsBtn" type="button">Снять сердечки</button><button class="btn ghost full" id="adminDeleteUserBtn" type="button">Удалить аккаунт (владелец)</button></div>
           <div class="card panel"><h3>🛡️ Модерация аккаунтов</h3><p>Поиск по базе, блокировка/разблокировка и назначение роли модератора.</p><div class="row"><input class="inp" id="adminSearch" placeholder="Ник пользователя" style="flex:1;min-width:140px;margin:0"><button class="btn" id="adminSearchBtn" type="button">Найти</button></div><div class="admin-user-list" id="adminUserList"></div></div>
+          <div class="card panel"><h3>🚩 Жалобы игроков</h3><p>Очередь жалоб, отправленных через страницу прогресса.</p><button class="btn ghost" id="adminReportsBtn" type="button">Загрузить жалобы</button><div class="admin-user-list" id="adminReportsList"></div></div>
           <div class="card panel"><h3>🧾 Журнал действий</h3><p>История входов, изменений пароля, начислений и модерации.</p><button class="btn ghost" id="adminAuditBtn" type="button">Загрузить журнал</button><div class="admin-user-list" id="adminAudit"></div></div>
           <div class="card panel"><h3>📢 Общее оповещение</h3><p>Покажется всем сверху на 1 минуту.</p><textarea class="inp" id="adminAnnouncement" maxlength="240" rows="2" placeholder="Текст оповещения"></textarea><button class="btn full" id="adminAnnouncementBtn" type="button">Опубликовать на 60 секунд</button></div>
           <div class="card panel"><h3>✦ Premium и предупреждения</h3><p>Выбери игрока в списке выше.</p><input class="inp" id="adminPremiumDays" type="number" min="1" max="3650" value="30" placeholder="Дней Premium"><button class="btn full" id="adminPremiumGrant" type="button">Выдать Premium на срок</button><button class="btn ghost full" id="adminPremiumForever" type="button">Выдать навсегда</button><button class="btn ghost full" id="adminPremiumRevoke" type="button">Снять Premium</button><input class="inp" id="adminWarnReason" maxlength="300" placeholder="Причина предупреждения"><button class="btn ghost full" id="adminWarnBtn" type="button">Выдать предупреждение</button></div>
@@ -314,6 +315,7 @@
           <div id="topNote" class="topnote"></div>
           <div class="flist top" id="topList"></div>
         </div>
+        <div class="card panel server-leaderboard-panel"><div class="section-title"><div><span class="eyebrow">LIVE DATABASE</span><h2 class="orb">Рейтинг сервера</h2><p class="sub">Рейтинг по сохранённым данным аккаунтов, а не только по этому браузеру.</p></div><select class="inp" id="serverTopMetric" aria-label="Метрика рейтинга"><option value="won">Всего выиграно</option><option value="coins">Монеты</option><option value="games">Количество игр</option><option value="best">Лучший выигрыш</option><option value="pets">Питомцы</option></select></div><div id="serverTopList" class="server-top-list"><div class="empty-state">Загрузка рейтинга сервера…</div></div></div>
       </section>
 
       <!-- ПРОФИЛЬ -->
@@ -346,6 +348,7 @@
             <div class="emo" id="emo"></div>
             <div class="row" style="margin-top:14px"><label class="btn ghost" style="cursor:pointer">📁 Загрузить своё<input type="file" id="avFile" accept="image/*" hidden></label></div>
           </div>
+          <div class="card panel privacy-panel" style="grid-column:1/-1"><span class="eyebrow">ACCOUNT SAFETY</span><h3>🔒 Приватность аккаунта</h3><p class="sub">Настройки проверяются сервером: они действуют и в других браузерах.</p><form id="vaultPrivacyForm" class="privacy-form"><label>Видимость профиля<select class="inp" id="privacyProfile"><option value="public">Всем игрокам</option><option value="friends">Только друзьям</option><option value="private">Только мне</option></select></label><label>Комментарии<select class="inp" id="privacyComments"><option value="everyone">Разрешить всем</option><option value="friends">Только друзьям</option><option value="nobody">Отключить</option></select></label><label>Личные сообщения<select class="inp" id="privacyDm"><option value="everyone">Разрешить всем</option><option value="friends">Только друзьям</option><option value="nobody">Отключить</option></select></label><button class="btn" type="submit">Сохранить приватность</button></form><p class="sub" id="privacyStatus" aria-live="polite"></p></div>
           <div class="card panel pet-custom-panel" style="grid-column:1/-1">
             <span class="eyebrow">NEON PET STUDIO</span><h3>🐾 Персонализация питомца и сайта</h3>
             <p class="sub">Выбери настроение питомца, фон тапалки и украшения. Настройки сохраняются в твоём профиле.</p>
@@ -404,7 +407,7 @@
 <div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
 <div id="toast"></div>
 
-<script src="script.js?v=10"></script>
-<script src="master.js?v=1"></script>
+<script src="script.js?v=11"></script>
+<script src="master.js?v=2"></script>
 </body>
 </html>
