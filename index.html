@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
@@ -24,12 +24,41 @@
 <div id="auth">
   <div class="card auth-box">
     <h2 class="orb">Добро пожаловать</h2>
-    <p>Войди, чтобы сохранить баланс и свой профиль</p>
+    <p>Войди или создай аккаунт — баланс, профиль и друзья сохранятся</p>
     <div id="gBtn"></div>
-    <div id="gHint">Вход через Google пока не настроен. Вставь свой <b>Client ID</b> в переменную <code>GOOGLE_CLIENT_ID</code> в начале скрипта (инструкция в чате).</div>
-    <div class="divider">или как гость</div>
-    <input class="inp" id="guestName" maxlength="20" placeholder="Придумай ник">
-    <button class="btn full" id="guestGo">Играть</button>
+    <button class="btn ghost full gfake" id="gFake" type="button">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.7-.4-3.9z"/></svg>
+      Продолжить с Google
+    </button>
+    <div id="gHint">Вход через Google ещё не подключён. Вставь свой <b>Client ID</b> в константу <code>GOOGLE_CLIENT_ID</code> в начале <code>script.js</code> — шаги расписаны там же в комментарии. Пока можно входить по нику и паролю.</div>
+    <div class="divider">или по нику</div>
+
+    <div class="tabs" id="aTabs">
+      <button type="button" class="on" data-t="login">Вход</button>
+      <button type="button" data-t="reg">Регистрация</button>
+      <button type="button" data-t="guest">Гость</button>
+      <i></i>
+    </div>
+    <div class="err" id="aErr"></div>
+
+    <form class="aform on" data-f="login" id="fLogin" autocomplete="on">
+      <input class="inp" id="lgNick" name="username" autocomplete="username" maxlength="20" placeholder="Ник">
+      <div class="pw"><input class="inp" id="lgPass" name="password" type="password" autocomplete="current-password" placeholder="Пароль"><button type="button" class="eye" tabindex="-1" aria-label="Показать пароль">👁</button></div>
+      <button class="btn full" type="submit">Войти</button>
+    </form>
+
+    <form class="aform" data-f="reg" id="fReg" autocomplete="on">
+      <input class="inp" id="rgNick" name="username" autocomplete="username" maxlength="20" placeholder="Придумай ник (2–20 символов)">
+      <div class="pw"><input class="inp" id="rgPass" name="new-password" type="password" autocomplete="new-password" placeholder="Пароль (минимум 6 символов)"><button type="button" class="eye" tabindex="-1" aria-label="Показать пароль">👁</button></div>
+      <input class="inp" id="rgPass2" type="password" autocomplete="new-password" placeholder="Повтори пароль">
+      <button class="btn full" type="submit">Создать аккаунт</button>
+    </form>
+
+    <form class="aform" data-f="guest" id="fGuest" autocomplete="off">
+      <input class="inp" id="gsNick" maxlength="20" placeholder="Придумай ник">
+      <div class="note">Гостевой аккаунт запоминается в системе — друзья смогут найти тебя по нику. Позже в профиле можно задать пароль и сохранить его насовсем.</div>
+      <button class="btn full" type="submit">Играть как гость</button>
+    </form>
   </div>
 </div>
 
@@ -95,6 +124,19 @@
         </div>
       </section>
 
+      <!-- ДРУЗЬЯ -->
+      <section class="view" id="v-friends">
+        <div class="card fhead">
+          <h1 class="orb">👥 Друзья</h1>
+          <p class="sub" style="margin-bottom:16px">Все, кто заходил в систему (даже гостем), запоминаются — найди игрока по нику и добавь</p>
+          <form class="row" id="frForm" autocomplete="off"><input class="inp" id="frIn" maxlength="20" placeholder="Ник игрока" style="flex:1;min-width:180px;margin:0"><button class="btn" type="submit">➕ Добавить</button></form>
+        </div>
+        <div class="grid2" style="margin-top:18px">
+          <div class="card panel"><h3>🤝 Мои друзья <span id="frCnt"></span></h3><div class="flist" id="frList"></div></div>
+          <div class="card panel"><h3>🔎 Игроки в системе</h3><div class="flist" id="frSug"></div></div>
+        </div>
+      </section>
+
       <!-- ПРОФИЛЬ -->
       <section class="view" id="v-profile">
         <div class="card pwrap">
@@ -129,6 +171,10 @@
             <div class="swatches" id="sws"></div>
             <div class="row" style="margin-top:14px"><input type="color" id="bgCol"><label class="btn ghost" style="cursor:pointer">📁 Своя картинка<input type="file" id="bgFile" accept="image/*" hidden></label></div>
           </div>
+          <div class="card panel" style="grid-column:1/-1" id="secPanel">
+            <h3>🔒 Безопасность</h3>
+            <div id="secBody"></div>
+          </div>
         </div>
         <div class="row" style="margin-top:18px"><button class="btn ghost" id="resetBal">♻️ Сбросить баланс до 1000</button><button class="btn ghost" id="logout">🚪 Выйти</button></div>
       </section>
@@ -141,12 +187,14 @@
     <button class="nbtn" data-view="slots"><em>🎰</em>Слоты</button>
     <button class="nbtn" data-view="wheel"><em>🎡</em>Колесо</button>
     <button class="nbtn" data-view="coin"><em>🪙</em>Монетка</button>
+    <button class="nbtn" data-view="friends"><em>👥</em>Друзья</button>
     <button class="nbtn" data-view="profile"><em>👤</em>Профиль</button>
   </nav>
 </div>
 <div id="wipe"></div>
+<div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
 <div id="toast"></div>
 
-<script src="script.js?v=3"></script>
+<script src="script.js?v=4"></script>
 </body>
 </html>

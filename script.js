@@ -1,89 +1,242 @@
 /* ============ НАСТРОЙКА ============
-   Чтобы заработал вход через Google, вставь сюда свой OAuth Client ID
-   (Google Cloud Console → Credentials → OAuth client ID → Web application).
-   В "Authorized JavaScript origins" добавь адрес сайта: https://ТВОЙ_НИК.github.io */
+   Вход через Google: вставь сюда свой OAuth Client ID.
+   1) console.cloud.google.com → APIs & Services → Credentials → Create credentials → OAuth client ID
+   2) Тип: Web application
+   3) Authorized JavaScript origins: адрес сайта, например https://ТВОЙ_НИК.github.io
+   4) Скопируй Client ID (вида 123-abc.apps.googleusercontent.com) в кавычки ниже.
+   Пока поле пустое — кнопка Google показывает подсказку, остальной вход работает. */
 const GOOGLE_CLIENT_ID = '';
 /* =================================== */
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)), pick=a=>a[Math.floor(Math.random()*a.length)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v??d}catch{return d}},
           set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch{toast('Не хватило места в памяти браузера');return false}}};
 const GRADS=['linear-gradient(135deg,#6d28d9,#0891b2)','linear-gradient(135deg,#be123c,#f59e0b)','linear-gradient(135deg,#065f46,#22d3ee)','linear-gradient(135deg,#1e1b4b,#c026d3)',
  'linear-gradient(135deg,#0f172a,#475569)','linear-gradient(135deg,#f472b6,#fb923c)','linear-gradient(135deg,#312e81,#06b6d4,#a3e635)','radial-gradient(circle at 30% 30%,#fbbf24,#7c2d12)'];
 const EMOJI=['😎','🤑','👑','🦊','🐺','🐉','👾','🤖','💀','🔥','🍀','💎','🎩','🦄','🐱','🚀'];
+const DAY=864e5, GUEST_TTL=7*DAY, ONLINE_MS=45e3, GIFT=100;
 
-let accounts=LS.get('nv_acc',{}), me=null, bet=50, busy=false, side=0;
+let accounts={}, me=null, bet=50, busy=false, side=0, curView='lobby', navBusy=false;
+
+/* ---------- Хранилище аккаунтов ---------- */
+function norm(a){
+  if(!a.type)a.type=a.id.startsWith('g_')?'google':a.id.startsWith('guest_')?'guest':'user';
+  if(!Array.isArray(a.friends))a.friends=[];
+  if(!a.seen)a.seen=Date.now();
+  if(!a.created)a.created=a.seen;
+  return a;
+}
+function sync(){accounts=LS.get('nv_acc',{});Object.values(accounts).forEach(norm);return accounts}
+/* записать меня, не затирая изменения из других вкладок */
+function save(){if(!me)return;const fresh=LS.get('nv_acc',{});fresh[me.id]=me;accounts=fresh;LS.set('nv_acc',accounts)}
+/* изменить несколько аккаунтов за раз (подарки, дружба) */
+function tx(fn){sync();accounts[me.id]=me;const r=fn(accounts);LS.set('nv_acc',accounts);return r}
+/* гостевые аккаунты, которыми не пользовались 7 дней, освобождают ник */
+function purgeGuests(keep){
+  sync();let ch=false;
+  for(const id in accounts){const a=accounts[id];if(a.type==='guest'&&id!==keep&&Date.now()-a.seen>GUEST_TTL){delete accounts[id];ch=true}}
+  if(ch){Object.values(accounts).forEach(a=>a.friends=a.friends.filter(f=>accounts[f]))}
+  LS.set('nv_acc',accounts);
+}
+sync();LS.set('nv_acc',accounts);
+
+const normName=s=>String(s).trim().replace(/\s+/g,' ');
+const keyName=s=>normName(s).toLocaleLowerCase('ru');
+const findByName=n=>{const k=keyName(n);return Object.values(sync()).find(a=>keyName(a.name)===k)};
+function nameError(n){
+  n=normName(n);
+  if(n.length<2||n.length>20)return 'Ник должен быть от 2 до 20 символов';
+  if(!/^[\p{L}\p{N}_.\- ]+$/u.test(n))return 'В нике можно только буквы, цифры, пробел и символы _ - .';
+  return '';
+}
+function uniqueName(base){
+  base=normName(base).replace(/[^\p{L}\p{N}_.\- ]/gu,'').slice(0,17)||'Игрок';
+  let n=base,i=1;while(findByName(n)){i++;n=base+i}return n;
+}
+const rid=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const newAcc=(id,type,name)=>({id,type,name,email:null,av:{t:'emoji',v:pick(EMOJI)},bg:{t:'grad',v:0},accent:'#a855f7',fx:'neon',nc:'#ffffff',
+  coins:1000,games:0,won:0,best:0,bonusAt:0,friends:[],seen:Date.now(),on:false,created:Date.now()});
+
+/* ---------- Пароли (PBKDF2 + соль, в открытом виде не хранятся) ---------- */
+const hex=u=>[...new Uint8Array(u)].map(b=>b.toString(16).padStart(2,'0')).join('');
+async function hashPw(pw,salt,alg){
+  if(alg==='pbkdf2'){
+    const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveBits']);
+    return hex(await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:150000,hash:'SHA-256'},k,256));
+  }
+  /* запасной вариант, если браузер открыл страницу не по https */
+  let h1=0xdeadbeef,h2=0x41c6ce57,s=salt+'|'+pw;
+  for(let r=0;r<2000;r++)for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+  h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (h2>>>0).toString(16).padStart(8,'0')+(h1>>>0).toString(16).padStart(8,'0');
+}
+async function makePass(pw){
+  const salt=hex(crypto.getRandomValues(new Uint8Array(16))),alg=(window.crypto&&crypto.subtle)?'pbkdf2':'weak';
+  return {a:alg,s:salt,h:await hashPw(pw,salt,alg)};
+}
+async function checkPass(a,pw){
+  if(!a.pass)return false;
+  try{return await hashPw(pw,a.pass.s,a.pass.a)===a.pass.h}catch{return false}
+}
+/* защита от перебора пароля: 5 ошибок → пауза, дальше всё дольше */
+const failKey=a=>keyName(a);
+function lockLeft(k){const f=LS.get('nv_fail',{})[k];return f&&f.until>Date.now()?Math.ceil((f.until-Date.now())/1000):0}
+function addFail(k){const all=LS.get('nv_fail',{}),f=all[k]||{n:0,until:0};f.n++;if(f.n>=5)f.until=Date.now()+Math.min(600,30*2**(f.n-5))*1e3;all[k]=f;LS.set('nv_fail',all);return f.n}
+function clearFail(k){const all=LS.get('nv_fail',{});if(all[k]){delete all[k];LS.set('nv_fail',all)}}
 
 /* ---------- Загрузка ---------- */
 'NEON VAULT'.split('').forEach((c,i)=>{const s=document.createElement('span');s.textContent=c===' '?'\u00A0':c;s.style.animationDelay=(.15+i*.09)+'s';$('#ldTitle').appendChild(s)});
 (function load(){
-  const msgs=['Запуск хранилища…','Зажигаем неон…','Тасуем карты…','Полируем монеты…','Почти готово…'];
-  let p=0;const t=setInterval(()=>{p+=Math.random()*9+3;if(p>=100){p=100;clearInterval(t);setTimeout(startApp,500)}
-    $('#ldBar').style.width=p+'%';$('#ldTxt').textContent=msgs[Math.min(4,Math.floor(p/21))]},170);
+  const msgs=['Запуск хранилища…','Зажигаем неон…','Тасуем карты…','Полируем монеты…','Почти готово…'],D=RM?500:2400,bar=$('#ldBar'),txt=$('#ldTxt');
+  let t0=0;
+  requestAnimationFrame(function tick(now){
+    if(!t0)t0=now;
+    const k=Math.min(1,(now-t0)/D),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+    bar.style.transform=`scaleX(${e})`;txt.textContent=msgs[Math.min(4,Math.floor(k*5))];
+    if(k<1)requestAnimationFrame(tick);else setTimeout(startApp,350);
+  });
 })();
 function startApp(){
   $('#loader').classList.add('hide');setTimeout(()=>$('#loader').remove(),900);
+  purgeGuests(LS.get('nv_cur',null));
   const cur=LS.get('nv_cur',null);
-  if(cur&&accounts[cur]) enter(accounts[cur]); else showAuth();
+  if(cur&&accounts[cur])enter(accounts[cur],true);else showAuth();
 }
 
-/* ---------- Авторизация ---------- */
+/* ---------- Экран входа ---------- */
 function showAuth(){
   $('#app').style.display='none';$('#auth').style.display='grid';
-  if(!GOOGLE_CLIENT_ID){$('#gHint').style.display='block';return}
+  $$('#auth input').forEach(i=>i.value='');
+  setTab('login',true);setupGoogle();
+}
+function setTab(t,quiet){
+  const tabs=['login','reg','guest'];
+  $$('#aTabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+  $('#aTabs').style.setProperty('--ti',tabs.indexOf(t));
+  $$('.aform').forEach(f=>f.classList.toggle('on',f.dataset.f===t));
+  $('#aErr').textContent='';
+  if(!quiet&&innerWidth>700){const f=$('.aform.on input');f&&setTimeout(()=>f.focus(),60)}
+}
+$$('#aTabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.t));
+$$('.eye').forEach(b=>b.onclick=()=>{const i=b.previousElementSibling;i.type=i.type==='password'?'text':'password';b.style.opacity=i.type==='text'?1:''});
+function aErr(m){const e=$('#aErr');e.textContent=m;e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake')}
+
+function setupGoogle(){
+  if(!GOOGLE_CLIENT_ID){$('#gFake').style.display='flex';$('#gBtn').style.display='none';return}
+  $('#gFake').style.display='none';$('#gBtn').style.display='flex';
   if(window.google&&google.accounts)return initG();
-  const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=initG;
-  s.onerror=()=>{$('#gHint').style.display='block';$('#gHint').textContent='Не удалось загрузить Google. Войди как гость.'};
+  if($('#gsiScript'))return;
+  const s=document.createElement('script');s.id='gsiScript';s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=initG;
+  s.onerror=()=>{s.remove();$('#gBtn').style.display='none';const h=$('#gHint');h.style.display='block';h.textContent='Не удалось загрузить Google. Войди по нику и паролю.'};
   document.head.appendChild(s);
 }
+$('#gFake').onclick=()=>{const h=$('#gHint');h.style.display=h.style.display==='block'?'none':'block'};
 function initG(){
   google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogle});
   $('#gBtn').innerHTML='';
-  google.accounts.id.renderButton($('#gBtn'),{theme:'filled_black',size:'large',shape:'pill',text:'signin_with',locale:'ru'});
+  google.accounts.id.renderButton($('#gBtn'),{theme:'filled_black',size:'large',shape:'pill',text:'continue_with',locale:'ru'});
 }
 function onGoogle(r){
+  let p;
   try{
     let b=r.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');b+='='.repeat((4-b.length%4)%4);
-    const p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
-    login('g_'+p.sub,p.name||'Игрок',p.picture,p.email);
-  }catch(e){toast('Ошибка входа через Google')}
-}
-$('#guestGo').onclick=()=>{
-  const n=$('#guestName').value.trim();
-  if(n.length<2)return toast('Ник — минимум 2 символа');
-  login('guest_'+n.toLowerCase(),n,null,null);
-};
-$('#guestName').onkeydown=e=>{if(e.key==='Enter')$('#guestGo').click()};
-function login(id,name,pic,email){
-  let a=accounts[id];
-  if(!a){a=accounts[id]={id,name,email,av:{t:pic?'img':'emoji',v:pic||pick(EMOJI)},bg:{t:'grad',v:0},accent:'#a855f7',fx:'neon',nc:'#ffffff',
-    coins:1000,games:0,won:0,best:0,bonusAt:0}}
-  else if(pic&&a.av.t==='img'&&/^https/.test(a.av.v))a.av.v=pic;
+    p=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
+    if(!p.sub)throw 0;
+  }catch(e){return toast('Ошибка входа через Google')}
+  sync();const id='g_'+p.sub;let a=accounts[id];
+  if(!a){
+    a=newAcc(id,'google',uniqueName(p.name||'Игрок'));a.email=p.email||null;
+    if(p.picture)a.av={t:'img',v:p.picture};
+  }else if(p.picture&&a.av.t==='img'&&/^https/.test(a.av.v))a.av.v=p.picture;
   enter(a);
 }
-function enter(a){
-  me=a;LS.set('nv_cur',a.id);save();
-  $('#auth').style.display='none';$('#app').style.display='flex';
-  render();buildWipe();toast('Добро пожаловать, '+me.name+'!');
+
+/* вход по нику и паролю */
+$('#fLogin').onsubmit=e=>submit(e,async()=>{
+  const nick=normName($('#lgNick').value),pw=$('#lgPass').value;
+  if(!nick||!pw)return aErr('Введи ник и пароль');
+  const k=failKey(nick),left=lockLeft(k);
+  if(left)return aErr(`Слишком много попыток. Подожди ${left} с`);
+  const a=findByName(nick);
+  if(!a)return aErr('Такого аккаунта нет. Создай его на вкладке «Регистрация»');
+  if(a.type==='google')return aErr('Этот аккаунт создан через Google — нажми «Продолжить с Google»');
+  if(a.type==='guest')return aErr('Это гостевой ник, пароля у него нет. Выбери другой ник или зарегистрируйся');
+  if(!(await checkPass(a,pw))){
+    const n=addFail(k);
+    return aErr(n>=5?`Слишком много попыток. Подожди ${lockLeft(k)} с`:`Неверный пароль (осталось попыток: ${5-n})`);
+  }
+  clearFail(k);enter(a);
+});
+/* регистрация */
+$('#fReg').onsubmit=e=>submit(e,async()=>{
+  const nick=normName($('#rgNick').value),pw=$('#rgPass').value,pw2=$('#rgPass2').value;
+  const ne=nameError(nick);if(ne)return aErr(ne);
+  if(findByName(nick))return aErr('Этот ник уже занят — выбери другой');
+  if(pw.length<6)return aErr('Пароль — минимум 6 символов');
+  if(pw!==pw2)return aErr('Пароли не совпадают');
+  const a=newAcc(rid('u_'),'user',nick);a.pass=await makePass(pw);
+  enter(a,false,'Аккаунт создан! Добро пожаловать, '+a.name);
+});
+/* гость: ник запоминается как гостевой аккаунт, но занятый ник не открывается */
+$('#fGuest').onsubmit=e=>submit(e,async()=>{
+  const nick=normName($('#gsNick').value),ne=nameError(nick);if(ne)return aErr(ne);
+  const ex=findByName(nick);
+  if(ex)return aErr(ex.type==='guest'?'Этот ник уже занял другой гость — выбери другой':'Это ник зарегистрированного игрока. Войди с паролем или выбери другой ник');
+  enter(newAcc(rid('gs_'),'guest',nick));
+});
+async function submit(e,fn){
+  e.preventDefault();const b=e.target.querySelector('[type=submit]');if(b.disabled||navBusy)return;
+  b.disabled=true;$('#aErr').textContent='';sync();
+  try{await fn()}catch(err){console.error(err);aErr('Что-то пошло не так, попробуй ещё раз')}
+  b.disabled=false;
 }
-function save(){if(me){accounts[me.id]=me;LS.set('nv_acc',accounts)}}
-$('#logout').onclick=()=>{LS.set('nv_cur',null);me=null;location.reload()};
+
+async function enter(a,instant,msg){
+  me=norm(a);me.on=true;me.seen=Date.now();LS.set('nv_cur',a.id);purgeGuests(me.id);save();
+  const apply=()=>{$('#auth').style.display='none';$('#app').style.display='flex';resetViews();render()};
+  if(instant){apply();$('#app').classList.add('app-in');popIn($('#v-lobby'));setTimeout(()=>$('#app').classList.remove('app-in'),900)}
+  else{navBusy=true;await transition(apply,()=>popIn($('#v-lobby')));navBusy=false}
+  toast(msg||'С возвращением, '+me.name+'!');
+}
+function resetViews(){
+  $$('.view').forEach(v=>v.classList.remove('active','pop'));$('#v-lobby').classList.add('active');curView='lobby';
+  $$('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.view==='lobby'));
+}
+$('#logout').onclick=async()=>{
+  if(navBusy)return;
+  if(me.type==='guest'&&!(await ask('Выйти из гостевого аккаунта?','Войти в гостя повторно нельзя: ник освободится через 7 дней. Задай пароль в профиле — тогда аккаунт сохранится навсегда.','Всё равно выйти','Остаться')))return;
+  me.on=false;me.seen=Date.now();save();LS.set('nv_cur',null);me=null;
+  navBusy=true;await transition(()=>{$('#app').style.display='none';resetViews();showAuth()},()=>{const b=$('.auth-box');b.style.animation='none';void b.offsetWidth;b.style.animation=''});navBusy=false;
+};
+/* вкладки браузера синхронизируются между собой */
+addEventListener('storage',e=>{
+  if(e.key!=='nv_acc'||!me)return;
+  sync();const f=accounts[me.id];if(f){me=f;updBal(true)}
+  if(curView==='friends')renderFriends();
+});
 
 /* ---------- Отрисовка профиля ---------- */
-function setAv(el){if(me.av.t==='img'){el.style.backgroundImage=`url("${me.av.v}")`;el.textContent=''}else{el.style.backgroundImage='';el.textContent=me.av.v}}
-function bgCss(){const b=me.bg;return b.t==='grad'?GRADS[b.v]:b.t==='color'?b.v:`url("${b.v}") center/cover`}
+function setAvEl(el,av){
+  if(av.t==='img'&&/^(https:|data:image\/)/.test(av.v)){el.style.backgroundImage=`url("${av.v.replace(/"/g,'%22')}")`;el.textContent=''}
+  else{el.style.backgroundImage='';el.textContent=av.t==='emoji'?av.v:'🙂'}
+}
+const setAv=el=>setAvEl(el,me.av);
+function bgCss(){const b=me.bg;return b.t==='grad'?GRADS[b.v]:b.t==='color'?b.v:`url("${String(b.v).replace(/"/g,'%22')}") center/cover`}
+const TYPE_LBL={guest:'Гость',user:'Аккаунт',google:'Google'};
 function render(){
   document.documentElement.style.setProperty('--accent',me.accent);
   setAv($('#miniAv'));setAv($('#bigAv'));
   $('#miniNick').textContent=me.name;$('#lobNick').textContent=me.name;
   const bn=$('#bigNick');bn.textContent=me.name;bn.className='nick fx-'+me.fx;bn.style.setProperty('--nc',me.nc);
-  $('#mail').textContent=me.email||'Гость';
+  $('#mail').textContent=me.type==='google'&&me.email?me.email:TYPE_LBL[me.type];
   $('#banner').style.background=bgCss();
   $('#nickIn').value=me.name;$('#fxSel').value=me.fx;$('#nickCol').value=me.nc;$('#accCol').value=me.accent;
   $$('#emo button').forEach(b=>b.classList.toggle('on',me.av.t==='emoji'&&b.textContent===me.av.v));
   $$('#sws .sw').forEach((b,i)=>b.classList.toggle('on',me.bg.t==='grad'&&me.bg.v===i));
-  updBal(true);stats();
+  updBal(true);stats();renderSec();
 }
 function stats(){$('#stC').textContent=me.coins.toLocaleString('ru');$('#stG').textContent=me.games;$('#stW').textContent=me.won.toLocaleString('ru');$('#stB').textContent=me.best.toLocaleString('ru')}
 function updBal(quiet){$('#balN').textContent=me.coins.toLocaleString('ru');if(!quiet){const b=$('#bal');b.classList.remove('pulse');void b.offsetWidth;b.classList.add('pulse')}stats()}
@@ -92,7 +245,15 @@ function addCoins(n){me.coins=Math.max(0,me.coins+n);save();updBal()}
 /* редактор профиля */
 EMOJI.forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>{me.av={t:'emoji',v:e};save();render()};$('#emo').appendChild(b)});
 GRADS.forEach((g,i)=>{const b=document.createElement('button');b.className='sw';b.style.background=g;b.onclick=()=>{me.bg={t:'grad',v:i};save();render()};$('#sws').appendChild(b)});
-$('#nickIn').oninput=e=>{const v=e.target.value.trim();if(v.length>=2){me.name=v;save();$('#miniNick').textContent=v;$('#lobNick').textContent=v;$('#bigNick').textContent=v}};
+/* ник меняется по Enter / когда поле теряет фокус — и должен быть свободным */
+$('#nickIn').onchange=e=>{
+  const v=normName(e.target.value);
+  if(v===me.name){e.target.value=v;return}
+  const err=nameError(v);if(err){toast(err);e.target.value=me.name;return}
+  const ex=findByName(v);if(ex&&ex.id!==me.id){toast('Ник «'+v+'» уже занят');e.target.value=me.name;return}
+  me.name=v;save();render();toast('Ник изменён');
+};
+$('#nickIn').onkeydown=e=>{if(e.key==='Enter')e.target.blur()};
 $('#fxSel').onchange=e=>{me.fx=e.target.value;save();render()};
 $('#nickCol').oninput=e=>{me.nc=e.target.value;save();$('#bigNick').style.setProperty('--nc',me.nc)};
 $('#accCol').oninput=e=>{me.accent=e.target.value;save();document.documentElement.style.setProperty('--accent',me.accent)};
@@ -107,91 +268,180 @@ function readImg(file,max,cb,square){
 $('#avFile').onchange=e=>{const f=e.target.files[0];if(f)readImg(f,160,d=>{me.av={t:'img',v:d};save();render()},true)};
 $('#bgFile').onchange=e=>{const f=e.target.files[0];if(f)readImg(f,1000,d=>{me.bg={t:'img',v:d};save();render()})};
 $('#resetBal').onclick=()=>{me.coins=1000;save();updBal();toast('Баланс сброшен: 1000 монет')};
-$('#mini').onclick=()=>go('profile');
+$('#mini').onclick=e=>go('profile',e);
+
+/* безопасность: пароль для гостя / смена пароля */
+function renderSec(){
+  const box=$('#secBody');box.innerHTML='';
+  const p=t=>{const e=document.createElement('p');e.className='secp';e.textContent=t;box.appendChild(e)};
+  if(me.type==='google'){p('Аккаунт защищён входом через Google — пароль не нужен.');return}
+  const grid=document.createElement('div');grid.className='secgrid';
+  const inp=ph=>{const i=document.createElement('input');i.className='inp';i.type='password';i.placeholder=ph;i.autocomplete='new-password';grid.appendChild(i);return i};
+  let old=null;
+  if(me.type==='guest')p('Сейчас ты гость: войти в этот ник повторно нельзя, а аккаунт пропадёт через 7 дней без активности. Задай пароль — и он станет обычным аккаунтом с сохранением баланса и друзей.');
+  else{p('Сменить пароль. Старый пароль нужен, чтобы никто не мог сделать это за тебя.');old=inp('Текущий пароль')}
+  const n1=inp('Новый пароль (от 6 символов)'),n2=inp('Повтори новый пароль');
+  const btn=document.createElement('button');btn.className='btn';btn.textContent=me.type==='guest'?'🔒 Создать пароль':'🔒 Сменить пароль';
+  btn.onclick=async()=>{
+    if(btn.disabled)return;
+    if(old&&!(await checkPass(me,old.value)))return toast('Текущий пароль неверный');
+    if(n1.value.length<6)return toast('Пароль — минимум 6 символов');
+    if(n1.value!==n2.value)return toast('Пароли не совпадают');
+    btn.disabled=true;
+    try{me.pass=await makePass(n1.value);const was=me.type;me.type='user';save();render();toast(was==='guest'?'Готово! Теперь это полноценный аккаунт 🎉':'Пароль изменён')}
+    finally{btn.disabled=false}
+  };
+  box.appendChild(grid);const r=document.createElement('div');r.className='row';r.style.marginTop='12px';r.appendChild(btn);box.appendChild(r);
+}
+
+/* ---------- Друзья ---------- */
+const isOnline=a=>a.id===me.id||(a.on&&Date.now()-a.seen<ONLINE_MS);
+function ago(t){
+  const m=Math.floor((Date.now()-t)/6e4);
+  if(m<1)return 'только что';if(m<60)return m+' мин назад';
+  const h=Math.floor(m/60);if(h<24)return h+' ч назад';
+  return Math.floor(h/24)+' дн назад';
+}
+function btnEl(txt,cls,title,fn){const b=document.createElement('button');b.className=cls;b.textContent=txt;b.title=title;b.onclick=fn;return b}
+function friendRow(a,k,acts){
+  const r=document.createElement('div');r.className='frow';r.style.setProperty('--k',k);
+  const av=document.createElement('div');av.className='av';setAvEl(av,a.av);
+  const dot=document.createElement('i');dot.className='dot'+(isOnline(a)?' on':'');av.appendChild(dot);
+  const fi=document.createElement('div');fi.className='fi';
+  const top=document.createElement('div');top.className='ftop';
+  const n=document.createElement('b');n.textContent=a.name;n.className='fx-'+a.fx;n.style.setProperty('--nc',a.nc);
+  const tag=document.createElement('span');tag.className='tag t-'+a.type;tag.textContent=TYPE_LBL[a.type].toLowerCase();
+  top.append(n,tag);
+  const m=document.createElement('small');m.textContent=`🪙 ${a.coins.toLocaleString('ru')} · игр: ${a.games} · ${isOnline(a)?'в сети':ago(a.seen)}`;
+  fi.append(top,m);r.append(av,fi,...acts);return r;
+}
+function renderFriends(){
+  if(!me)return;sync();
+  const fl=$('#frList'),sg=$('#frSug'),q=keyName($('#frIn').value||'');
+  const friends=me.friends.map(id=>accounts[id]).filter(Boolean).sort((a,b)=>isOnline(b)-isOnline(a)||a.name.localeCompare(b.name,'ru'));
+  $('#frCnt').textContent=friends.length?`(${friends.length})`:'';
+  fl.innerHTML='';sg.innerHTML='';
+  const empty=(box,t)=>{const e=document.createElement('div');e.className='empty';e.textContent=t;box.appendChild(e)};
+  if(!friends.length)empty(fl,'Пока никого. Введи ник сверху или добавь игрока из списка «Игроки в системе»');
+  friends.forEach((a,i)=>fl.appendChild(friendRow(a,i,[
+    btnEl('🎁','ib','Подарить '+GIFT+' монет',()=>gift(a.id)),
+    btnEl('✖','ib dng','Убрать из друзей',()=>unfriend(a.id))])));
+  const others=Object.values(accounts).filter(a=>a.id!==me.id&&!me.friends.includes(a.id)&&(!q||keyName(a.name).includes(q)))
+    .sort((a,b)=>isOnline(b)-isOnline(a)||b.seen-a.seen).slice(0,30);
+  if(!others.length)empty(sg,q?'Никого с таким ником не нашлось':'Здесь появятся все, кто зайдёт в систему — хоть гостем');
+  others.forEach((a,i)=>sg.appendChild(friendRow(a,i,[btnEl('➕','ib','Добавить в друзья',()=>link(a.id))])));
+}
+function link(id){
+  const name=tx(acc=>{
+    const o=acc[id];if(!o)return null;
+    if(!me.friends.includes(id))me.friends.push(id);
+    if(!o.friends.includes(me.id))o.friends.push(me.id);
+    return o.name;
+  });
+  if(!name)return toast('Игрок пропал из системы');
+  $('#frIn').value='';renderFriends();toast('🤝 '+name+' теперь в друзьях');
+}
+function unfriend(id){
+  tx(acc=>{me.friends=me.friends.filter(f=>f!==id);if(acc[id])acc[id].friends=acc[id].friends.filter(f=>f!==me.id)});
+  renderFriends();toast('Убрано из друзей');
+}
+function gift(id){
+  if(me.coins<GIFT)return toast('Не хватает монет для подарка');
+  const name=tx(acc=>{const o=acc[id];if(!o)return null;me.coins-=GIFT;o.coins+=GIFT;return o.name});
+  if(!name)return toast('Игрок пропал из системы');
+  updBal();renderFriends();toast(`🎁 ${name} получил ${GIFT} монет`);
+}
+$('#frForm').onsubmit=e=>{
+  e.preventDefault();const v=normName($('#frIn').value);if(!v)return;
+  const a=findByName(v);
+  if(!a)return toast('Игрок «'+v+'» не найден — ему нужно хотя бы раз зайти в систему');
+  if(a.id===me.id)return toast('Себя добавить нельзя 🙂');
+  if(me.friends.includes(a.id))return toast('Вы уже друзья');
+  link(a.id);
+};
+$('#frIn').oninput=()=>renderFriends();
+setInterval(()=>{if(!me)return;me.seen=Date.now();save();if(curView==='friends'&&!$('#frIn').matches(':focus'))renderFriends()},20e3);
+
+/* ---------- Диалог ---------- */
+function ask(t,p,ok='Да',no='Отмена'){
+  return new Promise(res=>{
+    $('#dT').textContent=t;$('#dP').textContent=p;$('#dYes').textContent=ok;$('#dNo').textContent=no;
+    const d=$('#dlg');d.classList.add('show');
+    const done=v=>{d.classList.remove('show');$('#dYes').onclick=$('#dNo').onclick=null;res(v)};
+    $('#dYes').onclick=()=>done(true);$('#dNo').onclick=()=>done(false);
+  });
+}
 
 /* ---------- Бонус ---------- */
 function bonusTick(){
-  const left=me?864e5-(Date.now()-me.bonusAt):0,b=$('#bonusBtn');
+  if(!me)return;
+  const left=864e5-(Date.now()-me.bonusAt),b=$('#bonusBtn');
   if(left<=0){b.textContent='🎁 Забрать +500 монет';b.disabled=false}
   else{const h=Math.floor(left/36e5),m=Math.floor(left%36e5/6e4),s=Math.floor(left%6e4/1e3);b.textContent=`⏳ Следующий бонус через ${h}ч ${m}м ${s}с`;b.disabled=true}
 }
 setInterval(bonusTick,1000);
 $('#bonusBtn').onclick=()=>{me.bonusAt=Date.now();addCoins(500);rain();toast('🎁 +500 монет!');bonusTick()};
 
-/* ---------- 3D-навигация ---------- */
-let curView='lobby',navBusy=false;
+/* ---------- Анимированный переход ----------
+   Круг-«шторка» раскрывается от места клика, под ним крутится кольцо из монет,
+   проявляется логотип, потом шторка плавно растворяется, а новый экран «въезжает». */
+(function buildWipe(){
+  const w=$('#wipe');
+  const coins=Array.from({length:12},(_,i)=>`<div class="wp-c" style="--a:${i*30}deg"><div class="wp-ci" style="--a:${i*30}deg;--i:${i}"><div class="wp-cf" style="--i:${i}">$</div></div></div>`).join('');
+  const row=t=>`<div class="wp-row">${[...t].map((c,i)=>`<span style="--i:${i}">${c}</span>`).join('')}</div>`;
+  const sparks=Array.from({length:22},()=>{
+    const x=(Math.random()-.5)*innerWidth*.9,y=(Math.random()-.5)*innerHeight*.9;
+    return `<i style="--x:${x|0}px;--y:${y|0}px;--t:${(.9+Math.random()*.9).toFixed(2)}s;--d:${(Math.random()*.6).toFixed(2)}s"></i>`}).join('');
+  w.innerHTML=`<div class="wp-grid"></div><div class="wp-glow"></div><div class="wp-orbit"></div><div class="wp-ring">${coins}</div>
+    <div class="wp-title">${row('NEON')}${row('VAULT')}</div><div class="wp-sparks">${sparks}</div><div class="wp-sweep"></div>`;
+})();
 
-/* логотип: кольцо из монет + NEON VAULT по центру (рисуется на canvas) */
-function drawCoin(x,px,py,r){
-  const g=x.createRadialGradient(px-r*.3,py-r*.35,r*.1,px,py,r);
-  g.addColorStop(0,'#fff6bf');g.addColorStop(.5,'#fbbf24');g.addColorStop(1,'#b45309');
-  x.shadowColor='#fbbf24';x.shadowBlur=r*.8;x.fillStyle=g;x.beginPath();x.arc(px,py,r,0,7);x.fill();x.shadowBlur=0;
-  x.beginPath();x.arc(px,py,r*.74,0,7);x.strokeStyle='rgba(120,53,15,.75)';x.lineWidth=r*.1;x.stroke();
-  x.fillStyle='#5b3a00';x.font=`900 ${r}px Orbitron, sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('$',px,py+r*.04);
-}
-function drawLogo(W,H,dpr){
-  const c=document.createElement('canvas');c.width=W*dpr;c.height=H*dpr;
-  const x=c.getContext('2d');x.scale(dpr,dpr);
-  const bg=x.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.7);
-  bg.addColorStop(0,'#2a1460');bg.addColorStop(1,'#05040c');x.fillStyle=bg;x.fillRect(0,0,W,H);
-  const cx=W/2,cy=H/2,m=Math.min(W,H),R=m*.32,cr=m*.075,inner=R-cr;
-  x.beginPath();x.arc(cx,cy,R,0,7);x.strokeStyle='rgba(168,85,247,.45)';x.lineWidth=3;x.shadowColor='#a855f7';x.shadowBlur=26;x.stroke();x.shadowBlur=0;
-  for(let i=0;i<12;i++){const a=i/12*Math.PI*2-Math.PI/2;drawCoin(x,cx+Math.cos(a)*R,cy+Math.sin(a)*R,cr)}
-  x.textAlign='center';x.textBaseline='middle';
-  const tw=inner*1.75;x.font='900 100px Orbitron, sans-serif';
-  let fs=100*tw/x.measureText('NEON VAULT').width,lines=['NEON VAULT'];
-  if(fs<24){lines=['NEON','VAULT'];fs=Math.min(m*.13,100*tw/x.measureText('VAULT').width)}
-  const g=x.createLinearGradient(0,cy-fs,0,cy+fs);g.addColorStop(0,'#ffffff');g.addColorStop(.5,'#22d3ee');g.addColorStop(1,'#a855f7');
-  x.fillStyle=g;x.shadowColor='#a855f7';x.shadowBlur=fs*.55;x.font=`900 ${fs}px Orbitron, sans-serif`;
-  lines.forEach((t,i)=>x.fillText(t,cx,cy+(i-(lines.length-1)/2)*fs*1.1));
-  return c;
-}
-
-/* сетка квадратиков, каждый показывает свой кусочек логотипа */
-let wipeKey='',wipeUrl='';
-async function buildWipe(){
-  const W=innerWidth,H=innerHeight,key=W+'x'+H;if(key===wipeKey)return;wipeKey=key;
-  try{await document.fonts.load('900 60px Orbitron')}catch{}
-  const cv=drawLogo(W,H,Math.min(2,devicePixelRatio||1));
-  const blob=await new Promise(r=>{try{cv.toBlob(r,'image/png')}catch{r(null)}});
-  if(wipeUrl.startsWith('blob:'))URL.revokeObjectURL(wipeUrl);
-  wipeUrl=blob?URL.createObjectURL(blob):cv.toDataURL('image/png');
-  const s=W<700?44:60,cols=Math.ceil(W/s),rows=Math.ceil(H/s),frag=document.createDocumentFragment();
-  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-    const t=document.createElement('i'),d=(c/cols+r/rows)/2;
-    t.style.cssText=`left:${c*s}px;top:${r*s}px;width:${s+1}px;height:${s+1}px;background-image:url("${wipeUrl}");background-size:${W}px ${H}px;background-position:-${c*s}px -${r*s}px;--d:${Math.round(d*240+Math.random()*200)}ms;--d2:${Math.round((1-d)*240+Math.random()*200)}ms`;
-    frag.appendChild(t);
-  }
-  const w=$('#wipe');w.innerHTML='';w.appendChild(frag);
-}
-let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(me&&!navBusy)buildWipe()},400)});
-
-async function go(id){
-  if(navBusy||id===curView)return;navBusy=true;
-  $$('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===id));
-  const w=$('#wipe');let swapped=false;
-  const swap=()=>{if(swapped)return;swapped=true;$('#v-'+curView).classList.remove('active');const to=$('#v-'+id);to.classList.add('active');to.scrollTop=0;curView=id};
+async function transition(swap,reveal,ev){
+  const w=$('#wipe'),W=innerWidth,H=innerHeight;
+  const x=ev&&(ev.clientX||ev.clientY)?ev.clientX:W/2,y=ev&&(ev.clientX||ev.clientY)?ev.clientY:H/2;
+  const R=Math.hypot(Math.max(x,W-x),Math.max(y,H-y))+24;
+  let swapped=false;const doSwap=()=>{if(!swapped){swapped=true;swap&&swap()}};
   try{
-    await buildWipe();
-    if(!w.children.length)throw new Error('no tiles');
-    w.style.display='block';void w.offsetWidth;w.classList.add('cover');   // квадраты с логотипом закрывают экран
-    await sleep(720);
-    swap();                                                                // вкладка меняется под логотипом
-    await sleep(350);
-    w.classList.add('leave');                                              // квадраты уходят
-    await sleep(720);
-  }catch(e){console.warn('transition fallback',e);wipeKey=''}
-  swap();w.classList.remove('cover','leave');w.style.display='none';navBusy=false;
+    w.style.clipPath=`circle(0px at ${x}px ${y}px)`;w.style.display='block';w.classList.add('cover');
+    const open=w.animate([{clipPath:`circle(0px at ${x}px ${y}px)`},{clipPath:`circle(${R}px at ${x}px ${y}px)`}],
+      {duration:RM?1:520,easing:'cubic-bezier(.65,0,.25,1)',fill:'forwards'});
+    await open.finished;
+    doSwap();                                    // экран меняется под закрытой шторкой
+    await sleep(RM?1:460);
+    reveal&&reveal();
+    const out=w.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(1.1)'}],
+      {duration:RM?200:560,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'});
+    await out.finished;
+  }catch(err){console.warn('transition fallback',err);doSwap();reveal&&reveal()}
+  w.getAnimations().forEach(a=>a.cancel());
+  w.style.display='none';w.style.clipPath='';w.classList.remove('cover');
 }
-$$('.nbtn').forEach(b=>b.onclick=()=>go(b.dataset.view));
+/* плавное «въезжание» карточек нового экрана */
+function popIn(v){
+  [...v.children].forEach((c,i)=>c.style.setProperty('--k',i));
+  v.classList.remove('pop');void v.offsetWidth;v.classList.add('pop');
+  clearTimeout(popIn.t);popIn.t=setTimeout(()=>v.classList.remove('pop'),1500);
+}
+
+async function go(id,ev){
+  if(navBusy||id===curView||!me)return;navBusy=true;
+  $$('.nbtn').forEach(b=>b.classList.toggle('on',b.dataset.view===id));
+  const to=$('#v-'+id);
+  await transition(()=>{
+    $('#v-'+curView).classList.remove('active','pop');to.classList.add('active');to.scrollTop=0;curView=id;
+    if(id==='friends')renderFriends();if(id==='profile')renderSec();
+  },()=>popIn(to),ev);
+  navBusy=false;
+}
+$$('.nbtn').forEach(b=>b.onclick=e=>go(b.dataset.view,e));
 $$('.gcard').forEach(c=>{
-  c.onclick=()=>go(c.dataset.go);
+  c.onclick=e=>go(c.dataset.go,e);
   c.onmousemove=e=>{const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform=`rotateY(${x*22}deg) rotateX(${-y*22}deg) scale(1.04)`};
   c.onmouseleave=()=>c.style.transform='';
 });
 
 /* ---------- Общее для игр ---------- */
-function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2400)}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2600)}
 function rain(){for(let i=0;i<34;i++){const d=document.createElement('div');d.className='cr';d.textContent=pick(['🪙','💰','✨','⭐']);d.style.left=Math.random()*100+'vw';d.style.animationDuration=(1.4+Math.random()*1.6)+'s';d.style.animationDelay=Math.random()*.5+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),3500)}}
 $$('.bets').forEach(box=>[10,50,100,500,1000].forEach(v=>{const b=document.createElement('button');b.className='chip'+(v===bet?' on':'');b.textContent=v;b.onclick=()=>{bet=v;$$('.chip').forEach(c=>c.classList.toggle('on',+c.textContent===v))};box.appendChild(b)}));
 function start(){if(busy)return false;if(me.coins<bet){toast('Недостаточно монет — забери бонус в лобби 🎁');return false}busy=true;addCoins(-bet);return true}
