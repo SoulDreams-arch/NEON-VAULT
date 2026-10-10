@@ -1,0 +1,180 @@
+/* NEON VAULT / ARENA — visual refinement layer v1.0
+   Intentionally CSS-only: preserves existing IDs, event handlers and game logic. */
+:root{
+  color-scheme:dark;
+  --ui-bg:#070709;
+  --ui-panel:#0d0d11;
+  --ui-panel-raised:#121216;
+  --ui-border:rgba(255,255,255,.12);
+  --ui-border-strong:rgba(255,255,255,.24);
+  --ui-text:#f5f5f7;
+  --ui-muted:#a4a4ae;
+  --ui-dim:#777780;
+  --ui-accent:#e7e7ed;
+  --ui-radius:18px;
+  --ui-radius-sm:12px;
+  --ui-shadow:0 18px 50px rgba(0,0,0,.28);
+  --ui-focus:0 0 0 3px rgba(255,255,255,.13);
+}
+html{scrollbar-color:#38383f #08080a;scrollbar-width:thin;scroll-behavior:smooth}
+body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:-.012em;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed}
+::selection{background:#f5f5f7;color:#09090b}
+:focus-visible{outline:2px solid #f5f5f7!important;outline-offset:3px!important;box-shadow:var(--ui-focus)!important}
+
+/* Navigation and app frame */
+#nav{width:232px;padding:15px 11px 18px;gap:5px;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
+.side-brand{margin:2px 3px 18px;padding:10px 9px 14px;border-bottom:1px solid var(--ui-border);border-radius:13px;min-height:72px}
+.side-brand-word{font-size:16px;letter-spacing:.11em}
+.side-brand small{font-size:9px;letter-spacing:.22em;color:#85858e}
+.nbtn{min-height:43px;border-radius:12px;padding:10px 12px;gap:11px;font-size:12px;font-weight:600;letter-spacing:0}
+.nbtn em{width:23px;min-width:23px;font-size:17px;font-style:normal;filter:grayscale(.25)}
+.nbtn.on{background:linear-gradient(100deg,rgba(255,255,255,.11),rgba(255,255,255,.025))!important;border-color:rgba(255,255,255,.2)!important}
+#stage{padding:14px 18px 18px 17px;gap:0}
+header.card{min-height:66px;padding:10px 17px!important;border-radius:17px;margin-bottom:17px;gap:13px}
+.logo{font-size:14px;letter-spacing:.12em;font-weight:800}
+.header-cat{width:36px;height:36px;object-fit:contain}
+.bal{border:1px solid var(--ui-border);border-radius:12px;background:rgba(255,255,255,.035);padding:9px 12px;font-variant-numeric:tabular-nums}
+.mini{gap:9px}
+#viewport{min-height:0}
+.view{padding:4px 3px 30px 3px;scrollbar-gutter:stable}
+.view>*{max-width:1440px;margin-left:auto;margin-right:auto}
+.view .section-title{gap:14px}
+
+/* Unified surfaces */
+.card,.panel,.gamebox,.pwrap,.auth-box,.gcard,.streak,.slots-odds,.doodle-side,.doodle-board-wrap,.constellation-panel{
+  border-radius:var(--ui-radius)!important;
+  border-color:var(--ui-border)!important;
+  box-shadow:var(--ui-shadow),inset 0 1px rgba(255,255,255,.025)!important;
+}
+.card{padding:clamp(17px,2vw,25px)}
+.card:hover,.gcard:hover{border-color:var(--ui-border-strong)!important}
+.panel{padding:clamp(16px,2vw,23px)}
+.hero,.progress-hero,.tree-hero,.settings-hero,.doodle-hero,.forum-hero{
+  position:relative;isolation:isolate;overflow:hidden;
+  border:1px solid rgba(255,255,255,.16)!important;
+  background:radial-gradient(ellipse at 88% 5%,rgba(255,255,255,.085),transparent 33%),linear-gradient(125deg,#111115,#09090c 68%,#0d0d11)!important;
+}
+.hero:after,.forum-hero:after{content:"";position:absolute;inset:auto -8% -70% 35%;height:100%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse,rgba(255,255,255,.045),transparent 66%)}
+.orb{letter-spacing:-.035em;line-height:1.1}
+.eyebrow{font-size:9px;letter-spacing:.2em;font-weight:800;text-transform:uppercase;color:#a7a7b1!important}
+.sub,.muted{color:var(--ui-muted)!important;line-height:1.65}
+.section-title{align-items:flex-start}
+.section-title h1,.section-title h2{letter-spacing:-.035em}
+
+/* Inputs, tabs and action hierarchy */
+.btn{min-height:42px;padding:11px 16px;border-radius:12px;font-size:12px;font-weight:750;letter-spacing:.005em;box-shadow:none!important}
+.btn:not(.ghost),.btn.gold{background:linear-gradient(180deg,#f5f5f7,#d6d6dc)!important;color:#08080b!important;border:1px solid #fff!important}
+.btn.ghost{background:rgba(255,255,255,.035)!important;border-color:var(--ui-border-strong)!important;color:#f1f1f4!important}
+.btn:hover{filter:brightness(1.07);transform:translateY(-1px)!important}
+.btn:active{transform:translateY(0) scale(.985)!important}
+.inp,input:not([type=color]):not([type=range]):not([type=file]),textarea,select{
+  min-height:42px;border-radius:11px!important;border:1px solid var(--ui-border-strong)!important;
+  padding:10px 12px;line-height:1.45;box-shadow:inset 0 1px 2px rgba(0,0,0,.2);transition:border-color .16s,background .16s,box-shadow .16s;
+}
+textarea{min-height:100px;resize:vertical}
+.inp:hover,input:hover,textarea:hover,select:hover{border-color:rgba(255,255,255,.34)!important}
+.inp:focus,input:focus,textarea:focus,select:focus{border-color:rgba(255,255,255,.72)!important;outline:0!important;box-shadow:var(--ui-focus)!important}
+::placeholder{color:#777780!important;opacity:1}
+.tabs{padding:4px;border:1px solid var(--ui-border);border-radius:13px;background:#08080a;gap:4px}
+.tabs button{min-height:37px;border-radius:9px!important}
+.divider{color:#777780}
+
+/* Lobby cards — more consistent rhythm and hover affordance */
+#v-lobby>.hero{margin-bottom:14px;min-height:180px;display:flex;align-items:center}
+#v-lobby>.streak{margin-bottom:18px}
+.games{gap:13px}
+.gcard{min-height:176px;padding:23px 19px;text-align:left;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;background:linear-gradient(145deg,#111115,#09090c)!important;cursor:pointer}
+.gcard .ic{font-size:38px;line-height:1;margin-bottom:13px;transform:none;filter:grayscale(.2) drop-shadow(0 8px 16px #0008)}
+.gcard h3{font-size:15px;line-height:1.35;margin:0 0 7px;transform:none;letter-spacing:-.02em}
+.gcard p{font-size:12px;line-height:1.6;transform:none;color:#a2a2ac;max-width:32ch}
+.gcard:after{content:"↗";position:absolute;right:16px;top:15px;color:#777780;font-size:15px;opacity:0;transform:translate(-3px,3px);transition:.18s}
+.gcard:hover:after{opacity:1;transform:translate(0,0)}
+.lobby-poll,.updates-card,.donate{margin-top:17px}
+.idea-form{gap:10px}
+
+/* Forum: calmer reading surface, clearer metadata and stronger hierarchy */
+.forum-hero{padding:clamp(22px,3vw,36px)!important;border-radius:22px!important;min-height:170px}
+.forum-hero h1{font-size:clamp(28px,4vw,43px);margin:7px 0 10px}
+.forum-hero-stat{border-radius:14px;background:rgba(255,255,255,.045);min-width:125px}
+.forum-layout{gap:15px;margin-top:16px}
+.forum-sidebar,.forum-right{top:14px}
+.forum-sidebar,.forum-right,.forum-layout .panel{border-radius:17px!important}
+.forum-toolbar{gap:8px}
+.forum-thread-card{padding:17px;grid-template-columns:40px minmax(0,1fr) 64px;border-radius:14px;background:rgba(255,255,255,.018);gap:13px}
+.forum-thread-card:hover{transform:translateY(-1px);transition:transform .16s,border-color .16s,background .16s}
+.forum-thread-title{font-size:15px;line-height:1.45;letter-spacing:-.015em}
+.forum-thread-content>p{font-size:12px;line-height:1.7;max-width:78ch;color:#b0b0ba}
+.forum-thread-meta,.forum-thread-byline{letter-spacing:0;line-height:1.5}
+.forum-tag{border-radius:7px;background:rgba(255,255,255,.035);color:#d0d0d6}
+.forum-category{border-radius:10px;padding:10px 9px}
+.forum-category.on{box-shadow:inset 2px 0 #f5f5f7}
+.forum-post-body{font-size:14px;line-height:1.85;max-width:82ch}
+.forum-reply{padding:17px;border-radius:14px}
+.forum-pagination{padding-top:12px;border-top:1px solid var(--ui-border)}
+
+/* Messages, profile, settings and status clarity */
+.messenger-shell,.chat-main,.chat-sidebar,.chat-active{border-radius:15px}
+.chat-messages{scroll-behavior:smooth;overscroll-behavior:contain}
+.chat-compose textarea{min-height:44px;max-height:140px}
+.profile-sheet{border:1px solid var(--ui-border-strong)!important;box-shadow:0 28px 90px rgba(0,0,0,.72)!important}
+.profile-comment,.profile-stat,.settings-option,.master-item,.master-achievement{border-radius:13px}
+.presence-select{max-width:140px;border-radius:9px!important}
+#toast{max-width:min(520px,calc(100vw - 28px));border:1px solid var(--ui-border-strong);border-radius:13px;box-shadow:0 16px 45px #0009;backdrop-filter:blur(16px)}
+#dlg .dbox{border:1px solid var(--ui-border-strong)!important;border-radius:20px!important}
+
+/* Loading and authentication */
+.auth-box{width:min(100%,440px);padding:clamp(23px,4vw,36px)!important;background:linear-gradient(150deg,rgba(17,17,21,.98),rgba(7,7,9,.99))!important}
+.auth-box h2{font-size:clamp(25px,4vw,32px);letter-spacing:-.04em}
+.auth-box>p{font-size:13px;line-height:1.7;color:#a8a8b2}
+.auth-box .aform{gap:10px}
+.auth-box .btn.full{min-height:46px}
+#loader{background:radial-gradient(ellipse at 50% 38%,#17171c,#050507 68%)!important}
+.ld-bar{overflow:hidden;border-radius:99px}
+
+/* Scrollbars and responsive behavior */
+*{scrollbar-color:#38383f transparent;scrollbar-width:thin}
+@media(max-width:1100px){
+  #nav{width:208px}
+  .forum-layout{grid-template-columns:190px minmax(0,1fr)}
+  .forum-right{grid-column:1/-1}
+}
+@media(max-width:760px){
+  #nav{width:68px;padding:11px 6px}
+  #stage{padding:8px 8px 12px}
+  header.card{min-height:56px;margin-bottom:11px;padding:7px 9px!important;gap:7px}
+  .view{padding:2px 2px 24px}
+  .card{padding:16px}
+  #v-lobby>.hero{min-height:0}
+  .games{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .gcard{min-height:148px;padding:17px 14px}
+  .gcard .ic{font-size:31px}
+  .forum-layout{grid-template-columns:minmax(0,1fr)}
+  .forum-sidebar{position:static}
+  .forum-categories{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .forum-thread-card{grid-template-columns:30px minmax(0,1fr) 42px;padding:12px 10px;gap:8px}
+  .forum-thread-icon{width:29px;height:29px}
+  .forum-thread-title{font-size:13px}
+  .forum-thread-content>p{font-size:11px}
+  .forum-hero{gap:12px}
+}
+@media(max-width:460px){
+  #stage{padding:6px}
+  header.card{border-radius:13px}
+  .bal{padding:7px 8px}
+  .presence-select{max-width:92px;font-size:10px}
+  .games{grid-template-columns:1fr 1fr}
+  .gcard{min-height:138px}
+  .forum-toolbar{grid-template-columns:minmax(0,1fr) auto}
+  .forum-hero-stat{min-width:70px;padding:10px 7px}
+  .forum-hero-stat span{font-size:8px}
+  .forum-form-actions{flex-direction:column;align-items:stretch}
+  .forum-form-actions .btn{width:100%}
+}
+@media(hover:none){.gcard:after{opacity:.75;transform:none}.btn:hover{transform:none!important}}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
