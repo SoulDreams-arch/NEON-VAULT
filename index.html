@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#030305">
 <meta name="description" content="NEON VAULT — игровое сообщество: мини-игры, питомцы, достижения и общение.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' https://accounts.google.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://renderneon.souldreams.blitz.cloud https://accounts.google.com https://www.googleapis.com; frame-src https://accounts.google.com; upgrade-insecure-requests">
 <title>NEON VAULT — Black Neon Social Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
@@ -82,6 +83,21 @@
         <section class="card panel"><div class="section-title"><div><span class="eyebrow">DAILY ROUTINE</span><h2 class="orb">Задания дня</h2><p class="sub">Награды начисляются сервером и доступны один раз в день.</p></div></div><div id="dailyQuestGrid" class="master-grid"><div class="empty-state">Загружаем задания…</div></div></section>
         <section class="card panel"><div class="section-title"><div><span class="eyebrow">MILESTONES</span><h2 class="orb">Открытые достижения</h2><p class="sub">Новые этапы открываются по мере твоего прогресса.</p></div><span id="achievementCount" class="pill-live">0 ОТКРЫТО</span></div><div id="achievementGrid" class="master-grid"><div class="empty-state">Загружаем достижения…</div></div></section>
         <section class="card panel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID или точный ник игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section>
+      </section>
+      <!-- NEON ARENA: community forum -->
+      <section class="view" id="v-forum">
+        <div class="card hero forum-hero"><div><span class="eyebrow">NEON ARENA / COMMUNITY HUB</span><h1 class="orb">Игровой форум</h1><p class="sub">Гайды, стратегии, поиск команды и обсуждения — всё сообщество в одном месте.</p></div><div class="forum-hero-stat"><b id="forumThreadTotal">—</b><span>ОБСУЖДЕНИЙ</span></div></div>
+        <div class="forum-layout">
+          <aside class="card panel forum-sidebar"><div class="section-title"><div><span class="eyebrow">EXPLORE</span><h2 class="orb">Категории</h2></div></div><div id="forumCategories" class="forum-categories"><div class="empty-state">Загрузка категорий…</div></div><button id="forumBookmarksBtn" class="btn ghost full" type="button">☆ Сохранённые темы</button><div class="forum-side-note"><b>✦ Репутация</b><p>Помогай игрокам, пиши полезные ответы и получай очки сообщества.</p><button id="forumReputationBtn" class="btn ghost full" type="button">Таблица лидеров</button></div></aside>
+          <div class="forum-main"><div id="forumFeedView" class="card panel"><div class="forum-toolbar"><label class="forum-search"><span>⌕</span><input id="forumSearch" class="inp" type="search" placeholder="Поиск по темам и гайдам…" maxlength="100"></label><select id="forumSort" class="inp" aria-label="Сортировка"><option value="new">Свежие</option><option value="top">Лучшие</option><option value="unanswered">Без ответов</option></select><button id="forumCreateBtn" class="btn" type="button">＋ Новая тема</button></div><div id="forumActiveFilters" class="forum-filter-row"></div><div id="forumThreads" class="forum-threads"><div class="empty-state">Загрузка обсуждений…</div></div><div class="forum-pagination"><button class="btn ghost" id="forumPrev" type="button">← Назад</button><span id="forumPageLabel">Страница 1</span><button class="btn ghost" id="forumNext" type="button">Далее →</button></div></div>
+            <div id="forumDetailView" class="card panel" hidden></div>
+            <div id="forumComposeView" class="card panel" hidden><div class="section-title"><div><span class="eyebrow">START A DISCUSSION</span><h2 class="orb">Новая тема</h2></div><button id="forumComposeCancel" class="btn ghost" type="button">← К обсуждениям</button></div><form id="forumComposeForm" class="forum-form"><label>Категория<select id="forumComposeCategory" class="inp" required></select></label><label>Заголовок<input id="forumComposeTitle" class="inp" minlength="5" maxlength="120" placeholder="Например: Лучшие настройки для…" required></label><label>Текст публикации<textarea id="forumComposeBody" class="inp" minlength="10" maxlength="12000" rows="7" placeholder="Поделись опытом, вопросом или гайдом…" required></textarea></label><label>Теги <span class="sub">до 5, через запятую</span><input id="forumComposeTags" class="inp" maxlength="150" placeholder="гайд, pvp, советы"></label><div class="forum-form-actions"><span class="sub">Публикация сразу появится в выбранной категории.</span><button class="btn" type="submit">Опубликовать тему</button></div></form></div>
+            <div id="forumBookmarksView" class="card panel" hidden><div class="section-title"><h2 class="orb">Сохранённые темы</h2><button class="btn ghost" data-forum-home type="button">← К форуму</button></div><div id="forumBookmarksList" class="forum-threads"></div></div>
+            <div id="forumLeadersView" class="card panel" hidden><div class="section-title"><h2 class="orb">Репутация сообщества</h2><button class="btn ghost" data-forum-home type="button">← К форуму</button></div><div id="forumLeadersList" class="forum-leaders"></div></div>
+            <div id="forumLinksView" class="card panel" hidden><div class="section-title"><div><span class="eyebrow">PLAYER IDENTITY</span><h2 class="orb">Игровые аккаунты</h2></div><button class="btn ghost" data-forum-home type="button">← К форуму</button></div><p class="sub">Добавь ссылки на Steam, Discord или Minecraft. Пока аккаунт не подтверждён OAuth или официальным API, он отображается как неподтверждённый.</p><div id="forumGameLinks" class="forum-game-links"></div></div>
+          </div>
+          <aside class="card panel forum-right"><span class="eyebrow">YOUR PROFILE</span><div class="forum-profile-mark">✦</div><h3 id="forumMeName">Игрок</h3><div class="forum-mini-stats"><div><b id="forumMyRep">0</b><span>РЕПУТАЦИЯ</span></div><div><b id="forumMyLevel">1</b><span>УРОВЕНЬ</span></div></div><button id="forumLinksBtn" class="btn ghost full" type="button">🔗 Игровые аккаунты</button><button id="forumMessagesBtn" class="btn ghost full" type="button">✉ Личные сообщения</button><div class="forum-side-note"><b>Правила арены</b><p>Уважай участников, указывай источники в гайдах и сообщай модераторам о нарушениях.</p></div></aside>
+        </div>
       </section>
       <!-- ЛОББИ -->
       <section class="view active" id="v-lobby">
@@ -411,6 +427,7 @@
     <button class="nbtn" data-view="tap"><em>🐾</em>Тапалка</button>
     <button class="nbtn" data-view="evolution"><em>✧</em>Эволюция</button>
     <button class="nbtn" data-view="games"><em>🎮</em>Игры и общий чат</button>
+    <button class="nbtn" data-view="forum"><em>⚔</em>Игровой форум</button>
     <button class="nbtn" data-view="doodle"><em>✎</em>Vault Doodle</button>
     <button class="nbtn" data-view="top"><em>🏆</em>Топ</button>
     <button class="nbtn" data-view="progress"><em>🌿</em>Прогресс</button>
@@ -426,7 +443,8 @@
 <div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
 <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script src="script.js?v=12" defer></script>
+<script src="script.js?v=13" defer></script>
+<script src="forum.js?v=1" defer></script>
 <script src="master.js?v=3" defer></script>
 <script src="ultimate.js?v=3" defer></script>
 </body>
