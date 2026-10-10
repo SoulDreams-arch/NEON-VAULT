@@ -661,91 +661,68 @@ body.compact-ui .card{padding:clamp(10px,1.2vw,18px)}body.compact-ui .view{paddi
 @media(max-width:620px){.settings-options{grid-template-columns:1fr}.settings-options .btn{width:100%}.doodle-side .doodle-choices{grid-template-columns:1fr}.doodle-tools{width:100%}.doodle-tools input[type=range]{flex:1}.doodle-footer{align-items:stretch}.doodle-footer .btn{width:100%}#v-slots .slots-layout{grid-template-columns:1fr!important}#v-slots .slots-matrix.reel-machine{min-height:220px;padding:9px!important;gap:7px!important}.reel-window{height:clamp(160px,55vw,230px);border-radius:12px}.reel-strip{gap:10px}.reel-strip b{font-size:clamp(46px,14vw,72px)}.tree-node{width:128px;min-height:94px;padding:8px}.tree-node b{font-size:10px}.tree-node small{font-size:9px}.tree-node.root{left:calc(50% - 88px);width:176px}.tree-node.daily{left:calc(50% - 64px)}.tree-node.games{left:calc(23% - 64px)}.tree-node.pets{left:calc(77% - 64px)}.tree-node.social{left:calc(13% - 64px)}.tree-node.creator{left:calc(87% - 64px)}.tree-node.vault{left:calc(50% - 64px)}.achievement-tree{height:490px}.tree-node.root{top:360px}.tree-node.daily{top:195px}.tree-node.games,.tree-node.pets{top:140px}.tree-node.social,.tree-node.creator{top:290px}.tree-node.vault{top:15px}}
 @media(prefers-reduced-motion:reduce){#starfield{opacity:.35}.settings-glyph{animation:none}.reel-strip.spinning{animation:none}}
 
-
-/* Startup/layout hotfix: keep notifications compact and let the app content scroll. */
-#toast{
-  position:fixed!important;
-  left:50%!important;
-  right:auto!important;
-  bottom:24px!important;
-  width:max-content!important;
-  max-width:min(92vw,560px)!important;
-  min-width:0!important;
-  height:auto!important;
-  margin:0!important;
-  padding:11px 20px!important;
-  white-space:normal!important;
-  overflow-wrap:anywhere!important;
-  transform:translate(-50%, calc(100% + 40px))!important;
-  z-index:9999!important;
-  pointer-events:none!important;
+/* === UX refinement: spacing, responsive touch targets and restrained surfaces === */
+:root {
+  color-scheme: dark;
+  --nv-focus: #f5f5f7;
+  --nv-radius-card: 20px;
+  --nv-motion-fast: 160ms;
+  --nv-motion-ui: 220ms;
 }
-#toast.show{transform:translate(-50%,0)!important}
-#app{height:100vh!important;height:100dvh!important;min-height:0!important}
-#stage{min-height:0!important;height:100%!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain}
-#stage>header{position:sticky;top:4px;z-index:15}
-#nav{height:100vh;height:100dvh;min-height:0;overflow-y:auto;overflow-x:hidden}
-.view{min-height:0}
-@media(max-width:700px){
-  #stage{padding:8px!important}
-  #stage>header{top:0}
-  #toast{bottom:14px!important;max-width:calc(100vw - 28px)!important}
+html { scroll-padding-top: 18px; }
+body { overflow-wrap: anywhere; }
+button, input, textarea, select { font: inherit; }
+button, select, input[type="checkbox"], input[type="radio"], input[type="range"], input[type="color"] { accent-color: #f5f5f7; }
+:where(button, a, input, textarea, select, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--nv-focus) !important;
+  outline-offset: 3px !important;
 }
-
-/* NEON VAULT polish pass: full 6×12 slots, monochrome tile-glitch navigation, cosmic progress. */
-#v-slots .gamebox{width:100%;max-width:none;padding:clamp(16px,2.5vw,34px)!important;background:radial-gradient(ellipse at 50% 0%,#15151a 0%,#08080b 62%,#050506 100%)!important;border-color:#ffffff45!important}
-#v-slots .gamebox>h1{font-size:clamp(34px,4vw,58px);margin:4px 0 8px}
-#v-slots .slots-layout{grid-template-columns:minmax(220px,clamp(220px,25vw,330px)) minmax(0,1fr)!important;gap:clamp(14px,2vw,28px)!important;align-items:stretch}
-#v-slots .slots-play{min-width:0;width:100%}
-#v-slots .slots-matrix{display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;grid-template-rows:repeat(6,minmax(36px,1fr));gap:clamp(3px,.55vw,8px)!important;padding:clamp(10px,1.5vw,20px)!important;min-height:clamp(360px,54vw,620px);width:100%;overflow:hidden!important;background:radial-gradient(ellipse at center,#16161c,#070709 75%)!important;border:1px solid #ffffff55!important;border-radius:24px!important;box-shadow:inset 0 0 0 5px #ffffff04,inset 0 0 55px #000,0 0 28px #ffffff08!important}
-#v-slots .slot-cell{min-width:0!important;min-height:0;aspect-ratio:auto;border-radius:clamp(5px,.7vw,10px)!important;display:grid;place-items:center;font-size:clamp(18px,2.7vw,38px)!important;line-height:1;background:linear-gradient(145deg,#1a1a20,#0b0b0e)!important;border:1px solid #ffffff1c!important;box-shadow:inset 0 1px #ffffff08;animation:slotCellIn .38s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--cell-i,0)*4ms)}
-#v-slots .slot-cell.hit{background:linear-gradient(145deg,#38383f,#17171c)!important;border-color:#f4f4f6!important;box-shadow:0 0 18px #ffffff25,inset 0 0 14px #ffffff12!important;transform:scale(1.04)}
-#v-slots .slots-odds{padding:clamp(14px,2vw,24px)!important;border-radius:20px!important}#v-slots .slots-odds h3{font-size:clamp(18px,1.8vw,25px)}#v-slots .slot-pattern-hint{font-size:13px;color:#b8b8c2;text-align:center;padding:12px}
-@keyframes slotCellIn{from{opacity:.25;transform:translateY(7px) scale(.92);filter:blur(3px)}to{opacity:1;transform:translateY(0) scale(1);filter:none}}
-#v-progress{isolation:isolate;background:radial-gradient(ellipse at 50% 0%,#171727 0%,#090910 45%,#030305 100%);padding:clamp(14px,2vw,28px)!important}
-#v-progress:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(1px 1px at 8% 16%,#fff 98%,transparent),radial-gradient(2px 2px at 24% 62%,#d9d9ff 98%,transparent),radial-gradient(1px 1px at 43% 28%,#fff 98%,transparent),radial-gradient(1px 1px at 68% 17%,#fff 98%,transparent),radial-gradient(2px 2px at 82% 73%,#d9d9ff 98%,transparent),radial-gradient(1px 1px at 92% 34%,#fff 98%,transparent),radial-gradient(1px 1px at 56% 82%,#fff 98%,transparent);background-size:330px 290px,410px 360px,270px 310px,390px 340px,450px 390px,300px 280px,370px 330px;opacity:.7;animation:cosmicDrift 55s linear infinite}
-#v-progress .progress-hero,#v-progress .constellation-panel,#v-progress>.panel{background:linear-gradient(145deg,#0c0c14eF,#060609ed)!important;border-color:#ffffff25!important;box-shadow:0 15px 50px #0008,inset 0 1px #ffffff08;backdrop-filter:blur(10px)}
-#v-progress .constellation-panel{min-height:calc(100vh - 190px);overflow:hidden;position:relative}#v-progress .constellation-panel:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 42%,#b7b7ff0c,transparent 58%)}#v-progress .constellation-scroll{position:relative}#v-progress .tree-lines path{stroke:#d4d4e9!important;stroke-opacity:.48!important;filter:drop-shadow(0 0 5px #ffffff40)}#v-progress .tree-node{background:linear-gradient(145deg,#171720ee,#08080dee)!important;border-color:#ffffff45!important;box-shadow:0 0 24px #ffffff0b!important;color:#f3f3f6!important}#v-progress .tree-node:hover,#v-progress .tree-node.active{border-color:#f1f1f8!important;box-shadow:0 0 26px #ffffff20!important}
-#v-progress .master-grid{position:relative}#v-progress>.panel{position:relative}
-#loader{background:radial-gradient(ellipse at 50% 40%,#19191f,#050506 72%)!important}#loader .ld-cat-logo{filter:drop-shadow(0 0 24px #ffffff40)!important}
-/* Tile-by-tile assembly/disassembly replaces the coin-ring wipe. */
-#wipe{background:#050507!important;clip-path:none;overflow:hidden}#wipe .wp-ring,#wipe .wp-orbit,#wipe .wp-glow{display:none!important}#wipe .vault-tilefield{position:absolute;inset:0;display:grid;grid-template-columns:repeat(12,1fr);grid-template-rows:repeat(8,1fr);perspective:900px;overflow:hidden}#wipe .vault-tile{display:block;grid-column:calc(var(--x) + 1);grid-row:calc(var(--y) + 1);background:linear-gradient(135deg,#19191f,#08080b);border:1px solid #ffffff0b;opacity:0;transform:translate3d(calc((var(--x) - 5.5)*22px),calc((var(--y) - 3.5)*18px),-80px) rotateX(35deg) scale(.7);animation:tileAssemble .48s cubic-bezier(.2,.8,.2,1) calc(var(--i)*3ms) forwards;box-shadow:inset 0 0 18px #ffffff04}#wipe.cover .vault-tile{animation-name:tileDisassemble;animation-duration:.38s;animation-delay:calc((96 - var(--i))*2ms);animation-fill-mode:forwards}#wipe .wp-title{z-index:2;text-shadow:0 0 20px #ffffff25}#wipe .wp-title span{color:#f5f5f7!important}#wipe .wp-sweep{background:linear-gradient(90deg,transparent,#ffffff12,transparent)!important}
-@keyframes tileAssemble{0%{opacity:0;filter:blur(5px);transform:translate3d(calc((var(--x) - 5.5)*22px),calc((var(--y) - 3.5)*18px),-80px) rotateX(35deg) scale(.7)}55%{opacity:1;filter:blur(0);transform:translate3d(0,0,12px) scale(1.03)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}@keyframes tileDisassemble{0%{opacity:1;transform:translate3d(0,0,0) scale(1)}45%{opacity:.9;filter:contrast(2);transform:translate3d(0,0,12px) skewX(-3deg)}100%{opacity:0;transform:translate3d(calc((var(--x) - 5.5)*24px),calc((var(--y) - 3.5)*20px),-90px) rotateX(-30deg) scale(.72)}}
-@media(max-width:760px){#v-slots .slots-layout{grid-template-columns:1fr!important}#v-slots .slots-matrix{min-height:0;grid-template-rows:repeat(6,minmax(30px,1fr));gap:3px!important;padding:7px!important}#v-slots .slot-cell{font-size:clamp(14px,4vw,26px)!important}#v-progress .constellation-panel{min-height:0}}
-@media(prefers-reduced-motion:reduce){#v-progress:before{animation:none}#v-slots .slot-cell{animation:none!important}#wipe .vault-tile{animation:none!important;opacity:1;transform:none}}
-#v-progress .constellation-subpanel{margin-top:14px;background:linear-gradient(145deg,#0a0a12eF,#060609ed)!important;border-color:#ffffff1c!important;position:relative}
-
-
-/* NEON VAULT 2.0 — refined admin, Premium and donation panels */
-.admin-head{position:relative;overflow:hidden;background:radial-gradient(ellipse at 88% 0%,rgba(168,85,247,.19),transparent 42%),linear-gradient(135deg,rgba(18,18,34,.96),rgba(12,15,30,.94));border:1px solid rgba(192,132,252,.25);box-shadow:0 18px 55px rgba(0,0,0,.25)}
-.admin-head-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
-.admin-head-chips span{font-size:12px;padding:7px 11px;border:1px solid rgba(196,181,253,.18);border-radius:999px;background:rgba(139,92,246,.10);color:#ded6ff}
-.admin-dashboard-grid>.card{border:1px solid rgba(168,145,255,.16);background:linear-gradient(145deg,rgba(25,25,43,.92),rgba(13,16,30,.94));border-radius:18px;box-shadow:0 12px 35px rgba(0,0,0,.18);transition:border-color .2s,transform .2s}
-.admin-dashboard-grid>.card:hover{border-color:rgba(196,181,253,.34);transform:translateY(-2px)}
-.admin-field-label{display:block;font-size:12px;color:#c4b5fd;margin:12px 0 6px;font-weight:700}
-.admin-dashboard-grid .inp{border-radius:12px}
-.premium-payment-card{margin:18px 0;border:1px solid rgba(248,113,113,.25);background:radial-gradient(ellipse at 90% 0%,rgba(168,85,247,.13),transparent 45%),linear-gradient(135deg,rgba(22,19,35,.97),rgba(13,15,28,.98))}
-.premium-payment-copy{max-width:850px}
-.premium-payment-copy h2{margin:6px 0 10px}
-.premium-payment-warning{color:#ff777e!important;background:rgba(127,29,29,.15);border:1px solid rgba(248,113,113,.28);border-left:3px solid #ef4444;padding:12px 14px;border-radius:10px;font-weight:650;line-height:1.55}
-.dn-payment-note{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:12px 0}
-.dn-payment-note p{margin:0;color:var(--muted,#aaa);flex:1;min-width:200px}
-.dn-payment-note .btn,.premium-payment-card .btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
-#achievementTree{min-height:620px;background:radial-gradient(ellipse at 50% 90%,rgba(109,40,217,.17),transparent 48%),radial-gradient(ellipse at 50% 40%,rgba(8,145,178,.08),transparent 65%);border-radius:20px}
-.tree-lines path{stroke:rgba(139,92,246,.38);stroke-width:2;filter:drop-shadow(0 0 4px rgba(139,92,246,.35))}
-.tree-node{box-shadow:0 0 0 1px rgba(196,181,253,.22),0 0 18px rgba(139,92,246,.16);transition:transform .18s,box-shadow .18s}
-.tree-node:hover{transform:scale(1.08);box-shadow:0 0 0 1px rgba(216,180,254,.7),0 0 25px rgba(168,85,247,.38)}
-@media(max-width:700px){.admin-head-chips{gap:6px}.admin-head-chips span{font-size:11px;padding:6px 8px}.dn-payment-note{align-items:stretch;flex-direction:column}.dn-payment-note .btn{width:100%}.premium-payment-warning{font-size:13px}}
-
-/* Centered moderator player inspector */
-.admin-user-select{width:100%;text-align:left;cursor:pointer;font:inherit;transition:transform .18s,border-color .18s,background .18s}.admin-user-select:hover{transform:translateY(-1px);border-color:rgba(100,220,255,.7);background:rgba(30,20,65,.92)}.admin-user-balances{color:#b7f5ff;white-space:nowrap}.nv-mod-overlay{position:fixed;inset:0;z-index:10050;display:grid;place-items:center;padding:20px;background:rgba(2,3,15,.78);backdrop-filter:blur(12px);animation:nvModalIn .18s ease-out}.nv-mod-card{position:relative;width:min(560px,100%);padding:28px;border:1px solid rgba(178,111,255,.55);border-radius:24px;background:linear-gradient(145deg,rgba(25,19,54,.98),rgba(6,12,30,.98));box-shadow:0 0 55px rgba(126,69,255,.22),inset 0 1px rgba(255,255,255,.06);color:#f5edff}.nv-mod-card h2{margin:0 44px 8px 0}.nv-mod-card h3{font-size:24px;margin:12px 0 18px;color:#d9c4ff}.nv-mod-close{position:absolute;right:16px;top:16px}.nv-mod-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.nv-mod-stats div{padding:14px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(173,133,255,.16);display:flex;flex-direction:column;gap:8px;min-width:0}.nv-mod-stats small{color:#a9a2c7}.nv-mod-stats b{font-size:17px;overflow-wrap:anywhere}.nv-mod-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.nv-mod-actions .btn{flex:1;min-width:130px}@keyframes nvModalIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}@media(max-width:480px){.nv-mod-card{padding:22px 16px}.nv-mod-stats{grid-template-columns:1fr}.admin-user-balances{white-space:normal}}
-
-/* Daily return loop: live mission card */
-.daily-event{position:relative;display:grid;grid-template-columns:130px minmax(0,1fr) minmax(210px,.7fr);gap:22px;align-items:center;overflow:hidden;margin:18px 0;padding:24px;background:radial-gradient(ellipse at 12% 50%,rgba(128,66,255,.22),transparent 46%),linear-gradient(115deg,rgba(18,17,39,.96),rgba(10,18,34,.96));border:1px solid rgba(167,120,255,.36);box-shadow:0 12px 42px rgba(87,45,180,.12),inset 0 0 35px rgba(80,113,255,.04)}
-.daily-event:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 35%,rgba(151,113,255,.06),transparent 70%);animation:eventSweep 8s linear infinite}
-.event-orbit{width:112px;height:112px;border:1px solid rgba(168,128,255,.65);border-radius:50%;display:grid;place-items:center;position:relative;color:#e7d8ff;font-size:39px;text-shadow:0 0 22px #a16cff;box-shadow:0 0 32px #7e42ff22,inset 0 0 25px #804cff22;animation:eventPulse 3s ease-in-out infinite}
-.event-orbit:before,.event-orbit:after{content:"";position:absolute;border:1px solid rgba(120,215,255,.55);border-radius:50%;inset:11px;transform:rotate(28deg) scaleX(.62)}.event-orbit:after{inset:-7px;border-color:rgba(172,104,255,.35);transform:rotate(-36deg) scaleX(.78)}.event-orbit i{position:absolute;width:7px;height:7px;border-radius:50%;background:#7cecff;box-shadow:0 0 14px #7cecff;top:5px;left:26px}.event-orbit b{position:absolute;right:10px;bottom:11px;font-size:18px}
-.event-copy,.event-action{position:relative;z-index:1}.event-copy h2{margin:6px 0;font-size:clamp(22px,2.2vw,30px)}.event-copy p{color:var(--muted,#aaa8c5);line-height:1.55;margin:7px 0 12px;max-width:650px}.event-meta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:12px;color:#bdb8dc}.event-action{padding:15px;border:1px solid #8d68e64d;border-radius:16px;background:#090b1dcc;display:flex;flex-direction:column;align-items:flex-start;gap:8px}.event-action>b{font-size:16px}.event-action small{font-size:11px;color:#a8a4c7}.event-action .btn{width:100%;margin-top:3px}.event-action #vaultMissionStatus{min-height:14px;color:#9fe8c2}
-@keyframes eventPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.035);filter:brightness(1.25)}}@keyframes eventSweep{0%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
-@media(max-width:760px){.daily-event{grid-template-columns:72px minmax(0,1fr);gap:14px;padding:17px}.event-orbit{width:68px;height:68px;font-size:26px}.event-orbit:before{inset:7px}.event-orbit:after{inset:-4px}.event-orbit b{font-size:13px;right:5px;bottom:5px}.event-action{grid-column:1/-1}.event-copy h2{font-size:22px}}
-@media(prefers-reduced-motion:reduce){.daily-event:after,.event-orbit{animation:none}}
+:where(button, input, textarea, select):disabled { cursor: not-allowed; }
+#toast { max-width: min(560px, calc(100vw - 28px)); text-wrap: pretty; }
+#loader[aria-busy="true"] { cursor: progress; }
+#viewport { min-width: 0; }
+#viewport > .view { min-width: 0; }
+#viewport .section-title, #viewport .constellation-head { min-width: 0; }
+#viewport .section-title > *, #viewport .constellation-head > * { min-width: 0; }
+#viewport :where(p, small, label) { overflow-wrap: anywhere; }
+#viewport :where(img, canvas, video, iframe) { max-width: 100%; }
+.card, .panel, .gamebox { border-radius: var(--nv-radius-card); }
+.btn, .nbtn, .chip, .doodle-choice { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.btn { min-height: 40px; }
+.inp, .aform .inp { min-height: 42px; }
+.btn:focus-visible, .nbtn:focus-visible { position: relative; z-index: 2; }
+@media (hover: hover) and (pointer: fine) {
+  .card, .gcard, .pet-card { transition: border-color var(--nv-motion-ui) ease, box-shadow var(--nv-motion-ui) ease, transform var(--nv-motion-ui) cubic-bezier(.2,.7,.2,1); }
+}
+@media (max-width: 720px) {
+  #stage { width: calc(100% - 12px); }
+  header.card { gap: 8px; }
+  .logo { min-width: 0; }
+  .logo span { font-size: clamp(12px, 3.5vw, 16px); }
+  .bal { white-space: nowrap; }
+  .mini { min-width: 0; max-width: 42vw; }
+  #miniNick { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .presence-select { max-width: 100px; }
+  .view .hero { gap: 16px; }
+  .master-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+  .row { flex-wrap: wrap; }
+  .row > .btn { max-width: 100%; }
+  .chat-compose { align-items: stretch; }
+  .chat-compose .btn { flex: 0 0 auto; }
+}
+@media (max-width: 420px) {
+  #stage { width: calc(100% - 8px); }
+  header.card { padding: 9px !important; }
+  .header-cat { width: 26px; height: 26px; }
+  .logo span { letter-spacing: .03em; }
+  .vault-notify-btn { padding-inline: 7px !important; }
+  .mini .av { display: none; }
+  .presence-select { width: 82px; font-size: 10px; }
+  .auth-box { padding: 20px 15px !important; }
+  .profile-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tree-detail { align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *, *::before, *::after { animation-delay: 0ms !important; }
+}

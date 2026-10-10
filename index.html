@@ -2,19 +2,21 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#030305">
+<meta name="description" content="NEON VAULT — игровое сообщество: мини-игры, питомцы, достижения и общение.">
 <title>NEON VAULT — Black Neon Social Arcade</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <div class="bg"><i></i><i></i><i></i></div>
 <canvas id="starfield" aria-hidden="true"></canvas>
 
 <!-- ЭКРАН ЗАГРУЗКИ -->
-<div id="loader">
+<div id="loader" role="status" aria-live="polite" aria-label="Загрузка NEON VAULT">
   <div class="ld-coin ld-cat-logo"><img src="cat-sticker.webp" alt="NEON VAULT — котик" class="ld-cat-img"></div>
   <div class="ld-title" id="ldTitle"></div>
   <div class="ld-bar"><b id="ldBar"></b></div>
@@ -22,7 +24,7 @@
 </div>
 
 <!-- ВХОД -->
-<div id="auth">
+<div id="auth" aria-label="Вход и регистрация">
   <div class="card auth-box">
     <h2 class="orb">Добро пожаловать</h2>
     <p>Войди или создай аккаунт — баланс, профиль и друзья сохранятся</p>
@@ -72,14 +74,14 @@
       <div class="mini" id="mini"><div class="av" id="miniAv"></div><b id="miniNick" style="font-size:14px"></b><select id="presenceMode" aria-label="Статус" title="Статус" class="presence-select"><option value="online">● В сети</option><option value="busy">◐ Не беспокоить</option><option value="offline">○ Не в сети</option></select></div>
     </header>
 
-    <div id="viewport">
+    <main id="viewport" tabindex="-1">
       <!-- ПРОГРЕСС И ДОСТИЖЕНИЯ -->
       <section class="view" id="v-progress">
         <div class="card hero progress-hero tree-hero"><div><span class="eyebrow">THE CONSTELLATION</span><h1 class="orb">Древо пути</h1><p class="sub">Каждый вход, игра и доброе действие зажигают новую звезду в твоём созвездии.</p></div><div class="progress-level"><span>УРОВЕНЬ</span><b id="progressLevel">1</b><small id="progressXp">0 XP</small></div></div>
-        <section class="card constellation-panel"><div class="constellation-head"><div><span class="eyebrow">YOUR LEGACY</span><h2 class="orb">Созвездие достижений</h2><p class="sub">Исследуй ветви: серия входов, игры, коллекция и сообщество.</p></div><span class="tree-key"><i></i> Открыто <i class="dim"></i> Впереди</span></div><div class="constellation-scroll"><div class="achievement-tree" id="achievementTree"><svg class="tree-lines" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true"><path d="M500 470 C500 390 500 360 500 300 M500 360 C400 320 330 270 230 210 M500 360 C600 320 680 270 780 210 M500 300 C430 250 410 180 390 120 M500 300 C570 250 600 180 620 120 M500 470 C360 480 240 430 130 360 M500 470 C640 480 760 430 870 360"/></svg><button class="tree-node root" data-tree-node="root"><span>✦</span><b>NEON VAULT</b><small>Твоё начало</small></button><button class="tree-node branch daily" data-tree-node="daily"><span>☼</span><b>Страж рассвета</b><small>Ежедневные входы</small><i class="tree-progress"><u style="width:12%"></u></i></button><button class="tree-node branch games" data-tree-node="games"><span>◈</span><b>Азарт звёзд</b><small>Игровые раунды</small><i class="tree-progress"><u style="width:18%"></u></i></button><button class="tree-node branch pets" data-tree-node="pets"><span>✧</span><b>Зверинец</b><small>Коллекция питомцев</small><i class="tree-progress"><u style="width:8%"></u></i></button><button class="tree-node branch social" data-tree-node="social"><span>⌘</span><b>Связи созвездий</b><small>Друзья и общение</small><i class="tree-progress"><u style="width:5%"></u></i></button><button class="tree-node branch creator" data-tree-node="creator"><span>✎</span><b>Искра творца</b><small>Идеи и рисунки</small><i class="tree-progress"><u style="width:0%"></u></i></button><button class="tree-node branch vault" data-tree-node="vault"><span>♜</span><b>Хранитель Vault</b><small>Особые вехи</small><i class="tree-progress"><u style="width:0%"></u></i></button></div></div><div class="tree-detail" id="treeDetail"><span class="tree-detail-icon">☼</span><div><b>Страж рассвета</b><p>Заходи каждый день, чтобы поддерживать серию и открывать новые уровни этой ветви.</p><small>Первая веха: 3 дня подряд</small></div></div>
-        <section class="card panel constellation-subpanel"><div class="section-title"><div><span class="eyebrow">DAILY ROUTINE</span><h2 class="orb">Задания дня</h2><p class="sub">Награды начисляются сервером и доступны один раз в день.</p></div></div><div id="dailyQuestGrid" class="master-grid"><div class="empty-state">Загружаем задания…</div></div></section>
-        <section class="card panel constellation-subpanel"><div class="section-title"><div><span class="eyebrow">MILESTONES</span><h2 class="orb">Открытые достижения</h2><p class="sub">Новые этапы открываются по мере твоего прогресса.</p></div><span id="achievementCount" class="pill-live">0 ОТКРЫТО</span></div><div id="achievementGrid" class="master-grid"><div class="empty-state">Загружаем достижения…</div></div></section>
-        <section class="card panel constellation-subpanel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID или точный ник игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section></section>
+        <section class="card constellation-panel"><div class="constellation-head"><div><span class="eyebrow">YOUR LEGACY</span><h2 class="orb">Созвездие достижений</h2><p class="sub">Исследуй ветви: серия входов, игры, коллекция и сообщество.</p></div><span class="tree-key"><i></i> Открыто <i class="dim"></i> Впереди</span></div><div class="constellation-scroll"><div class="achievement-tree" id="achievementTree"><svg class="tree-lines" viewBox="0 0 1000 560" preserveAspectRatio="none" aria-hidden="true"><path d="M500 470 C500 390 500 360 500 300 M500 360 C400 320 330 270 230 210 M500 360 C600 320 680 270 780 210 M500 300 C430 250 410 180 390 120 M500 300 C570 250 600 180 620 120 M500 470 C360 480 240 430 130 360 M500 470 C640 480 760 430 870 360"/></svg><button class="tree-node root" data-tree-node="root"><span>✦</span><b>NEON VAULT</b><small>Твоё начало</small></button><button class="tree-node branch daily" data-tree-node="daily"><span>☼</span><b>Страж рассвета</b><small>Ежедневные входы</small><i class="tree-progress"><u style="width:12%"></u></i></button><button class="tree-node branch games" data-tree-node="games"><span>◈</span><b>Азарт звёзд</b><small>Игровые раунды</small><i class="tree-progress"><u style="width:18%"></u></i></button><button class="tree-node branch pets" data-tree-node="pets"><span>✧</span><b>Зверинец</b><small>Коллекция питомцев</small><i class="tree-progress"><u style="width:8%"></u></i></button><button class="tree-node branch social" data-tree-node="social"><span>⌘</span><b>Связи созвездий</b><small>Друзья и общение</small><i class="tree-progress"><u style="width:5%"></u></i></button><button class="tree-node branch creator" data-tree-node="creator"><span>✎</span><b>Искра творца</b><small>Идеи и рисунки</small><i class="tree-progress"><u style="width:0%"></u></i></button><button class="tree-node branch vault" data-tree-node="vault"><span>♜</span><b>Хранитель Vault</b><small>Особые вехи</small><i class="tree-progress"><u style="width:0%"></u></i></button></div></div><div class="tree-detail" id="treeDetail"><span class="tree-detail-icon">☼</span><div><b>Страж рассвета</b><p>Заходи каждый день, чтобы поддерживать серию и открывать новые уровни этой ветви.</p><small>Первая веха: 3 дня подряд</small></div></div></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">DAILY ROUTINE</span><h2 class="orb">Задания дня</h2><p class="sub">Награды начисляются сервером и доступны один раз в день.</p></div></div><div id="dailyQuestGrid" class="master-grid"><div class="empty-state">Загружаем задания…</div></div></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">MILESTONES</span><h2 class="orb">Открытые достижения</h2><p class="sub">Новые этапы открываются по мере твоего прогресса.</p></div><span id="achievementCount" class="pill-live">0 ОТКРЫТО</span></div><div id="achievementGrid" class="master-grid"><div class="empty-state">Загружаем достижения…</div></div></section>
+        <section class="card panel"><div class="section-title"><div><span class="eyebrow">COMMUNITY</span><h2 class="orb">Сообщить о проблеме</h2><p class="sub">Жалобы проверяются командой модерации.</p></div></div><form id="masterReportForm" class="master-report-form"><label>Игрок<input class="inp" id="reportTarget" placeholder="ID или точный ник игрока" required></label><label>Причина<select class="inp" id="reportReason"><option value="harassment">Оскорбления или травля</option><option value="spam">Спам</option><option value="cheating">Читы или злоупотребление</option><option value="inappropriate">Неприемлемый контент</option><option value="other">Другое</option></select></label><label>Подробности<textarea class="inp" id="reportDetails" maxlength="1000" rows="3" placeholder="Опиши, что произошло (необязательно)"></textarea></label><button class="btn" type="submit">Отправить жалобу</button></form></section>
       </section>
       <!-- ЛОББИ -->
       <section class="view active" id="v-lobby">
@@ -95,11 +97,6 @@
           <div class="st-grid" id="stGrid"></div>
           <p class="st-note">Заходи каждый день: 1-й день +100 монет, 2-й +200, 3-й +300 и так до 100-го дня (+10 000). Пропустил день — серия начнётся заново.</p>
         </div>
-        <section class="card daily-event" id="vaultEvent">
-          <div class="event-orbit" aria-hidden="true"><span>✦</span><i></i><b>✧</b></div>
-          <div class="event-copy"><span class="eyebrow">LIVE IN THE VAULT</span><h2 class="orb">Секрет хранилища</h2><p id="vaultEventText">Каждый день в Vault появляется новая мини-миссия. Выполни её, чтобы поддерживать серию и открывать новые цели.</p><div class="event-meta"><span class="pill-live">● МИССИЯ ДНЯ</span><span id="vaultStreakLabel">Серия: 0 дней</span></div></div>
-          <div class="event-action"><b id="vaultMissionTitle">Первый шаг</b><small id="vaultMissionHint">Сыграй один раунд в любой игре</small><button class="btn gold" id="vaultMissionBtn" type="button">Начать миссию ↗</button><small id="vaultMissionStatus" aria-live="polite">Миссия обновляется ежедневно</small></div>
-        </section>
         <div class="games">
           <div class="card gcard tapper-card" data-go="tap"><span class="ic">💗</span><h3>Котик-тапалка</h3><p>Кликай, прокачивай и открывай новые облики</p></div>
           <div class="card gcard" data-go="slots"><span class="ic">🎰</span><h3>Слоты</h3><p>Нажми и крути барабаны</p></div>
@@ -125,11 +122,10 @@
           </details>
         </section>
 
-<div class="card panel premium-payment-card" id="premiumPayment"><div class="premium-payment-copy"><span class="eyebrow">NEON VAULT • PREMIUM</span><h2 class="orb">Оформление Premium</h2><p>Чтобы получить Premium, откройте страницу оплаты и отправьте пожертвование на указанную сумму.</p><p class="premium-payment-warning">Указывайте точную сумму, которая написана для Premium, и пишите комментарий «премиум на 1 месяц». Всё — так как платёжной системы пока что нет.</p><a class="btn gold" href="https://www.donationalerts.com/r/scrxld" target="_blank" rel="noopener noreferrer">⭐ Перейти к оплате Premium</a></div></div>
         <div class="card donate" id="donate">
           <div class="dn-head"><span class="dn-ic">💜</span>
             <div><h3 class="orb">Поддержать автора</h3>
-            <p>Сайт делается одним человеком. Пожертвования помогают оплачивать домен, хостинг и развитие проекта. <strong>Вы можете указывать любую сумму для пожертвования автору.</strong></p></div>
+            <p>Сайт делается одним человеком. Пожертвования идут на продвижение: реклама, домен и хостинг. Это добровольно и на игру не влияет: можно отправить игровые монеты или поддержать рублями.</p></div>
           </div>
           <div class="seg" id="dnTabs"><button type="button" class="on" data-m="coin">🪙 Монетами</button><button type="button" data-m="rub">₽ Рублями</button></div>
           <div class="dn-pane" id="dnCoin">
@@ -142,7 +138,7 @@
           </div>
           <div class="dn-pane" id="dnRub" hidden>
             <div class="seg dn-amts" id="dnRubAmts"></div>
-            <div class="dn-payment-note"><p>Вы можете указывать любую сумму для пожертвования автору.</p><a class="btn gold" href="https://www.donationalerts.com/r/scrxld" target="_blank" rel="noopener noreferrer">💜 Пожертвовать через DonationAlerts</a></div><div class="row" style="margin-top:12px"><button class="btn gold" id="dnPay" type="button">₽ Поддержать</button></div>
+            <div class="row" style="margin-top:12px"><button class="btn gold" id="dnPay" type="button">₽ Поддержать</button></div>
             <div id="dnGoal"></div>
             <div class="dn-grid" id="dnGrid"></div>
             <div class="dn-hint" id="dnHint"></div>
@@ -207,7 +203,7 @@
 
       <!-- ПАНЕЛЬ ВЛАДЕЛЬЦА -->
       <section class="view" id="v-admin">
-        <div class="card panel admin-head"><span class="eyebrow">RESTRICTED ACCESS</span><h1 class="orb">👑 Панель владельца</h1><p class="sub">Уютный центр управления NEON VAULT — аккаунты, баланс, Premium и безопасность.</p><div class="admin-head-chips"><span>✦ Аккаунты</span><span>✦ Экономика</span><span>✦ Premium</span><span>✦ Модерация</span></div></div>
+        <div class="card panel admin-head"><span class="eyebrow">RESTRICTED ACCESS</span><h1 class="orb">👑 Панель владельца</h1><p class="sub">Инструменты управления NEON VAULT</p></div>
         <div class="tap-upgrades admin-dashboard-grid">
           <div class="card panel"><h3>📊 Статистика базы</h3><div class="tap-stats"><div><small>Аккаунтов</small><b id="adminUsers">0</b></div><div><small>Монет у игроков</small><b id="adminCoins">0</b></div><div><small>Всего сердечек</small><b id="adminHearts">0</b></div></div><p class="sub">Данные загружаются с сервера, а не из браузера владельца.</p></div>
           <div class="card panel"><h3>🎁 Управление балансом</h3><p>Выбери аккаунт и выдай игровую валюту.</p><select class="inp" id="adminUser"></select><input class="inp" id="adminGrant" type="number" min="1" step="1" placeholder="Количество монет"><button class="btn gold full" id="adminGrantBtn" type="button">Начислить монеты</button><button class="btn ghost full" id="adminTakeCoinsBtn" type="button">Снять монеты</button><input class="inp" id="adminGrantHearts" type="number" min="1" step="1" placeholder="Количество сердечек"><button class="btn full" id="adminGrantHeartsBtn" type="button">Начислить сердечки</button><button class="btn ghost full" id="adminTakeHeartsBtn" type="button">Снять сердечки</button><button class="btn ghost full" id="adminDeleteUserBtn" type="button">Удалить аккаунт (владелец)</button></div>
@@ -215,7 +211,7 @@
           <div class="card panel"><h3>🚩 Жалобы игроков</h3><p>Очередь жалоб, отправленных через страницу прогресса.</p><button class="btn ghost" id="adminReportsBtn" type="button">Загрузить жалобы</button><div class="admin-user-list" id="adminReportsList"></div></div>
           <div class="card panel"><h3>🧾 Журнал действий</h3><p>История входов, изменений пароля, начислений и модерации.</p><button class="btn ghost" id="adminAuditBtn" type="button">Загрузить журнал</button><div class="admin-user-list" id="adminAudit"></div></div>
           <div class="card panel"><h3>📢 Общее оповещение</h3><p>Покажется всем сверху на 1 минуту.</p><textarea class="inp" id="adminAnnouncement" maxlength="240" rows="2" placeholder="Текст оповещения"></textarea><button class="btn full" id="adminAnnouncementBtn" type="button">Опубликовать на 60 секунд</button></div>
-          <div class="card panel"><h3>✦ Premium и предупреждения</h3><p>Выбери игрока в списке выше.</p><label class="admin-field-label" for="adminPremiumDays">Срок Premium</label><select class="inp" id="adminPremiumDays"><option value="30">1 месяц</option><option value="365">1 год лет</option><option value="730">2 года</option><option value="1095">3 года</option><option value="1460">4 года</option><option value="1825">5 год лет</option><option value="2190">6 год лет</option><option value="2555">7 год лет</option><option value="2920">8 год лет</option><option value="3285">9 год лет</option><option value="3650">10 год лет</option><option value="4015">11 год лет</option><option value="4380">12 год лет</option><option value="4745">13 год лет</option><option value="5110">14 год лет</option><option value="5475">15 год лет</option><option value="5840">16 год лет</option><option value="6205">17 год лет</option><option value="6570">18 год лет</option><option value="6935">19 год лет</option><option value="7300">20 год лет</option><option value="7665">21 год лет</option><option value="8030">22 год лет</option><option value="8395">23 год лет</option><option value="8760">24 год лет</option><option value="9125">25 год лет</option><option value="9490">26 год лет</option><option value="9855">27 год лет</option><option value="10220">28 год лет</option><option value="10585">29 год лет</option><option value="10950">30 год лет</option><option value="11315">31 год лет</option><option value="11680">32 год лет</option><option value="12045">33 год лет</option><option value="12410">34 год лет</option><option value="12775">35 год лет</option><option value="13140">36 год лет</option><option value="13505">37 год лет</option><option value="13870">38 год лет</option><option value="14235">39 год лет</option><option value="14600">40 год лет</option><option value="14965">41 год лет</option><option value="15330">42 год лет</option><option value="15695">43 год лет</option><option value="16060">44 год лет</option><option value="16425">45 год лет</option><option value="16790">46 год лет</option><option value="17155">47 год лет</option><option value="17520">48 год лет</option><option value="17885">49 год лет</option><option value="18250">50 год лет</option></select><small class="sub">Можно выбрать срок от 1 месяца до 50 лет.</small><button class="btn full" id="adminPremiumGrant" type="button">Выдать Premium на срок</button><button class="btn ghost full" id="adminPremiumForever" type="button">Выдать навсегда</button><button class="btn ghost full" id="adminPremiumRevoke" type="button">Снять Premium</button><input class="inp" id="adminWarnReason" maxlength="300" placeholder="Причина предупреждения"><button class="btn ghost full" id="adminWarnBtn" type="button">Выдать предупреждение</button></div>
+          <div class="card panel"><h3>✦ Premium и предупреждения</h3><p>Выбери игрока в списке выше.</p><input class="inp" id="adminPremiumDays" type="number" min="1" max="3650" value="30" placeholder="Дней Premium"><button class="btn full" id="adminPremiumGrant" type="button">Выдать Premium на срок</button><button class="btn ghost full" id="adminPremiumForever" type="button">Выдать навсегда</button><button class="btn ghost full" id="adminPremiumRevoke" type="button">Снять Premium</button><input class="inp" id="adminWarnReason" maxlength="300" placeholder="Причина предупреждения"><button class="btn ghost full" id="adminWarnBtn" type="button">Выдать предупреждение</button></div>
           <div class="card panel"><h3>🔐 Статус владельца</h3><p>Права проверяются сервером. Ключ владельца хранится только в переменных окружения сервера.</p><button class="btn ghost" id="ownerDeactivate" type="button">Снять статус владельца</button></div>
         </div>
       </section>
@@ -401,11 +397,11 @@
         </div>
         <div class="row" style="margin-top:18px"><button class="btn ghost" id="logout">🚪 Выйти</button></div>
       </section>
-    </div>
+    </main>
   </div>
 
   <!-- ЛЕВАЯ БОКОВАЯ НАВИГАЦИЯ -->
-  <nav id="nav">
+  <nav id="nav" aria-label="Основная навигация">
     <div class="side-brand" data-view="lobby" role="button" tabindex="0" aria-label="NEON VAULT — на главную">
       <span class="side-cat-wrap"><img src="cat-sticker.webp" alt="" class="side-cat"></span>
       <span class="side-brand-word">NEON <b>VAULT</b></span>
@@ -428,11 +424,10 @@
 </div>
 <div id="wipe"></div>
 <div id="dlg"><div class="card dbox"><h3 id="dT"></h3><p id="dP"></p><div class="row"><button class="btn ghost" id="dNo" type="button">Отмена</button><button class="btn" id="dYes" type="button">Да</button></div></div></div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<script src="script.js?v=11"></script>
-<script src="master.js?v=2"></script>
-<script src="ultimate.js?v=2"></script>
-<script src="engagement.js?v=1"></script>
+<script src="script.js?v=12" defer></script>
+<script src="master.js?v=3" defer></script>
+<script src="ultimate.js?v=3" defer></script>
 </body>
 </html>
